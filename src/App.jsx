@@ -136,6 +136,7 @@ export default function LIV() {
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customForm, setCustomForm] = useState({ name:"", muscleGroup:"Chest", equipment:"", difficulty:"Beginner", alternatives:"" });
   const [showFoodModal, setShowFoodModal] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [foodSearch, setFoodSearch] = useState("");
   const [scanState, setScanState] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
@@ -536,7 +537,9 @@ export default function LIV() {
               const day=i+1;
               const dk=`${calYear}-${String(calMonthIdx+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
               const hw=workoutDays.includes(dk); const it=dk===todayKey();
-              return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:hw?"#ff4500":it?"#1a1a1a":"transparent",border:it?"1px solid #ff4500":"1px solid transparent",position:"relative"}}><span style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:600,color:hw?"#fff":it?"#ff4500":"#444"}}>{day}</span>{hw&&<div style={{position:"absolute",bottom:3,width:4,height:4,borderRadius:"50%",background:"#fff",opacity:0.5}}/>}</div>);
+              const hasFood=(foodLog[dk]||[]).length>0;
+              const tappable=hw||hasFood;
+              return(<div key={day} onClick={()=>tappable&&setSelectedDay(dk)} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:hw?"#ff4500":it?"#1a1a1a":"transparent",border:it?"1px solid #ff4500":"1px solid transparent",position:"relative",cursor:tappable?"pointer":"default"}}><span style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:600,color:hw?"#fff":it?"#ff4500":"#444"}}>{day}</span>{(hw||hasFood)&&<div style={{position:"absolute",bottom:3,width:4,height:4,borderRadius:"50%",background:hw?"#fff":"#ff4500",opacity:0.8}}/>}</div>);
             })}
           </div>
           <div style={C.card}>
@@ -547,7 +550,57 @@ export default function LIV() {
             </div>
           </div>
           <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:12}}>WORKOUT HISTORY</div>
-          {workoutDays.length===0?(<div style={{textAlign:"center",padding:"30px 20px",fontFamily:"Barlow,sans-serif",color:"#333"}}>No workouts logged yet. Get after it! 💪</div>):[...workoutDays].reverse().slice(0,10).map(ds=>(<div key={ds} style={C.card}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{fontSize:16,letterSpacing:1}}>{new Date(ds+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase()}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff4500"}}>{workoutLog[ds].length} exercises</div></div>{workoutLog[ds].map((ex,i)=>(<div key={i} style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",padding:"3px 0",borderTop:i>0?"1px solid #1a1a1a":"none"}}>{ex.name} · {ex.sets}×{ex.reps}</div>))}</div>))}
+          {workoutDays.length===0?(<div style={{textAlign:"center",padding:"30px 20px",fontFamily:"Barlow,sans-serif",color:"#333"}}>No workouts logged yet. Get after it! 💪</div>):[...workoutDays].reverse().slice(0,10).map(ds=>(<div key={ds} onClick={()=>setSelectedDay(ds)} style={{...C.card,cursor:"pointer",borderLeft:"3px solid #ff4500"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{fontSize:16,letterSpacing:1}}>{new Date(ds+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase()}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff4500"}}>{workoutLog[ds].length} exercises</div></div>{workoutLog[ds].map((ex,i)=>(<div key={i} style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",padding:"3px 0",borderTop:i>0?"1px solid #1a1a1a":"none"}}>{ex.name} · {ex.sets}×{ex.reps}</div>))}</div>))}
+
+          {selectedDay&&(()=>{
+            const dayWorkout=workoutLog[selectedDay]||[];
+            const dayFood=foodLog[selectedDay]||[];
+            const dayLabel=new Date(selectedDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+            const totalCals=dayFood.reduce((s,f)=>s+f.calories,0);
+            const totalProtein=dayFood.reduce((s,f)=>s+f.protein,0);
+            return(
+              <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexShrink:0}}>
+                  <div>
+                    <div style={{fontSize:11,letterSpacing:3,color:"#ff4500",marginBottom:4}}>DAY SUMMARY</div>
+                    <div style={{fontSize:20,letterSpacing:2}}>{dayLabel.toUpperCase()}</div>
+                  </div>
+                  <button onClick={()=>setSelectedDay(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+                </div>
+
+                {dayWorkout.length>0&&(<>
+                  <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:12}}>💪 WORKOUT — {dayWorkout.length} EXERCISES</div>
+                  {dayWorkout.map((ex,i)=>(
+                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:"3px solid #ff4500",marginBottom:8}}>
+                      <div>
+                        <div style={{fontSize:15,letterSpacing:1}}>{ex.name}</div>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.reps} reps</div>
+                      </div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
+                    </div>
+                  ))}
+                </>)}
+
+                {dayFood.length>0&&(<>
+                  <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:8,marginTop:dayWorkout.length>0?16:0}}>🥗 NUTRITION — {totalCals} CALS · {totalProtein}G PROTEIN</div>
+                  {dayFood.map((food,i)=>(
+                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
+                      </div>
+                      <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
+                    </div>
+                  ))}
+                </>)}
+
+                {dayWorkout.length===0&&dayFood.length===0&&(
+                  <div style={{textAlign:"center",padding:"60px 20px"}}><div style={{fontSize:48,marginBottom:12}}>📭</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>Nothing logged for this day.</div></div>
+                )}
+                <div style={{paddingBottom:40}}/>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
