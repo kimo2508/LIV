@@ -262,6 +262,17 @@ export default function LIV() {
     }
   };
 
+  const finishEarly = () => {
+    const setsCompleted = Object.keys(completedSets).length;
+    if (setsCompleted === 0) { setActiveExercise(null); setIsResting(false); setCompletedSets({}); setTab("exercises"); return; }
+    const key = todayKey();
+    setWorkoutLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), {
+      name:activeExercise.name, sets:setsCompleted, reps:activeExercise.defaultReps,
+      time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+    }]}));
+    setActiveExercise(null); setIsResting(false); setCompletedSets({}); setCurrentSet(1); setTab("exercises");
+  };
+
   const saveCustom = () => {
     setCustomExercises(prev => [...prev, {
       ...customForm,
@@ -397,7 +408,10 @@ export default function LIV() {
               </div>
             )}
           </div>
-          <button onClick={()=>{setActiveExercise(null);setTab("exercises");}} style={C.btn("ghost")}>← BACK</button>
+          <button onClick={finishEarly} className="pr" style={{...C.btn("ghost"),color:"#ff8c00",border:"1px solid #ff8c00",marginBottom:8}}>
+            ✓ FINISH & SAVE ({Object.keys(completedSets).length} SET{Object.keys(completedSets).length!==1?"S":""} COMPLETED)
+          </button>
+          <button onClick={()=>{setActiveExercise(null);setIsResting(false);setCompletedSets({});setCurrentSet(1);setTab("exercises");}} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
           <div style={{...C.card,marginTop:12}}>
             <div style={C.lbl}>REST BETWEEN SETS</div>
             <div style={{display:"flex",gap:8}}>
