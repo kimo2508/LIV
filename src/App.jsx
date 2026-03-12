@@ -140,23 +140,21 @@ export default function LIV() {
   const [scanState, setScanState] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
   const [manualBarcode, setManualBarcode] = useState("");
-  const [scanHint, setScanHint] = useState("");
+  const [scanHint, setScanHint] = useState("Point camera at barcode...");
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const restRef = useRef(null);
-  const controlsRef = useRef(null);
+  const readerRef = useRef(null);
 
   const quote = getDailyQuote();
   const todayWorkout = workoutLog[todayKey()] || [];
   const todayFood = foodLog[todayKey()] || [];
 
-  // Persist to localStorage
   useEffect(() => { saveLS("liv_workoutLog", workoutLog); }, [workoutLog]);
   useEffect(() => { saveLS("liv_foodLog", foodLog); }, [foodLog]);
   useEffect(() => { saveLS("liv_customExercises", customExercises); }, [customExercises]);
   useEffect(() => { saveLS("liv_restTime", restTime); }, [restTime]);
 
-  // Rest timer
   useEffect(() => {
     if (isResting && restCountdown > 0) {
       restRef.current = setTimeout(() => setRestCountdown(r => r - 1), 1000);
@@ -164,11 +162,10 @@ export default function LIV() {
     return () => clearTimeout(restRef.current);
   }, [isResting, restCountdown]);
 
-  // Stop camera on tab change
   useEffect(() => { if (tab !== "nutrition") stopScanner(); }, [tab]);
 
   const stopScanner = useCallback(() => {
-    try { if (controlsRef.current) { controlsRef.current.stop(); controlsRef.current = null; } } catch {}
+    try { readerRef.current?.reset(); readerRef.current = null; } catch {}
     try { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null; } catch {}
   }, []);
 
@@ -185,12 +182,13 @@ export default function LIV() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-
-      // Dynamically import ZXing to avoid SSR issues
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const reader = new BrowserMultiFormatReader();
-
-      const controls = await reader.decodeFromStream(stream, videoRef.current, (result, err) => {
+      // Use ZXing loaded from CDN via window.ZXing
+      const ZXing = window.ZXing;
+      if (!ZXing) { setScanHint("Scanner not ready. Use manual entry below."); return; }
+      const hints = new Map();
+      const reader = new ZXing.BrowserMultiFormatReader(hints);
+      readerRef.current = reader;
+      reader.decodeFromStream(stream, videoRef.current, (result, err) => {
         if (result) {
           const code = result.getText();
           setScanHint("✓ Barcode detected!");
@@ -198,10 +196,9 @@ export default function LIV() {
           fetchBarcode(code);
         }
       });
-      controlsRef.current = controls;
     } catch (e) {
       setScanState("error");
-      setScanHint("Camera access denied.");
+      setScanHint("Camera access denied. Please allow camera permissions in Safari.");
     }
   };
 
@@ -310,11 +307,11 @@ export default function LIV() {
         ::-webkit-scrollbar-thumb{background:#ff4500;border-radius:2px}
         input::placeholder{color:#444} select{appearance:none;background:#111;color:#fff}
         @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes scanline{0%{top:0}100%{top:100%}}
+        @keyframes scanline{0%{top:0%}100%{top:100%}}
         .sl{animation:su 0.3s ease forwards}
         .ec:hover{background:#161616!important;transform:translateX(3px);transition:all 0.2s}
         .fr:hover{background:#161616!important} .pr:active{transform:scale(0.93)}
-        .scanline{position:absolute;left:0;right:0;height:2px;background:#ff4500;animation:scanline 1.5s linear infinite;opacity:0.8}
+        .scanline{position:absolute;left:0;right:0;height:2px;background:#ff4500;animation:scanline 1.5s linear infinite}
         video{object-fit:cover;width:100%;display:block}
       `}</style>
 
@@ -503,10 +500,10 @@ export default function LIV() {
               <div style={{...C.card,marginBottom:12}}>
                 <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
                 {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
-                {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220,objectFit:"cover"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
+                {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
                 {scanState==="loading"&&(<div style={{textAlign:"center",padding:20,fontFamily:"Barlow,sans-serif",color:"#666"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div>Looking up product...</div>)}
                 {scanState==="result"&&scanResult&&(<><div style={{background:"#0d1a0d",border:"1px solid #1a3a1a",borderRadius:10,padding:14,marginBottom:12}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{scanResult.name}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center"}}>{[{l:"CALS",v:scanResult.calories,c:"#ff4500"},{l:"PROTEIN",v:`${scanResult.protein}g`,c:"#00d4ff"},{l:"CARBS",v:`${scanResult.carbs}g`,c:"#ffcc00"},{l:"FAT",v:`${scanResult.fat}g`,c:"#ff69b4"}].map((m,i)=>(<div key={i}><div style={{fontSize:16,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>))}</div></div><button onClick={()=>addFood(scanResult)} className="pr" style={{...C.btn(),fontSize:14,marginBottom:8}}>✓ ADD THIS FOOD</button><button onClick={()=>{setScanState("idle");setManualBarcode("");setScanResult(null);}} style={{...C.btn("ghost"),fontSize:13}}>SCAN ANOTHER</button></>)}
-                {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try the search below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
+                {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
               </div>
               <div style={C.lbl}>SEARCH FOOD DATABASE</div>
               <input style={C.inp} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
