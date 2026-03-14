@@ -136,6 +136,12 @@ export default function LIV() {
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customForm, setCustomForm] = useState({ name:"", muscleGroup:"Chest", equipment:"", difficulty:"Beginner", alternatives:"" });
   const [showFoodModal, setShowFoodModal] = useState(false);
+  const [weightLog, setWeightLog] = useState(() => loadLS("liv_weightLog", []));
+  const [weightGoal, setWeightGoal] = useState(() => loadLS("liv_weightGoal", { current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" }));
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [weightEntry, setWeightEntry] = useState("");
+  const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
+  const [weightGoalForm, setWeightGoalForm] = useState({ current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" });
   const [selectedDay, setSelectedDay] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [macroGoals, setMacroGoals] = useState(() => loadLS("liv_macroGoals", { calories:2040, protein:180, carbs:60, fat:100 }));
@@ -164,6 +170,8 @@ export default function LIV() {
   useEffect(() => { saveLS("liv_customExercises", customExercises); }, [customExercises]);
   useEffect(() => { saveLS("liv_restTime", restTime); }, [restTime]);
   useEffect(() => { saveLS("liv_macroGoals", macroGoals); }, [macroGoals]);
+  useEffect(() => { saveLS("liv_weightLog", weightLog); }, [weightLog]);
+  useEffect(() => { saveLS("liv_weightGoal", weightGoal); }, [weightGoal]);
 
   useEffect(() => {
     if (isResting && restCountdown > 0) {
@@ -394,7 +402,7 @@ export default function LIV() {
       </div>
 
       <div style={C.nav}>
-        {[{id:"home",l:"🏠 HOME"},{id:"exercises",l:"⚡ EXERCISES"},{id:"log",l:"📋 LOG"},{id:"nutrition",l:"🔥 NUTRITION"},{id:"calendar",l:"📅 CALENDAR"}].map(t=>(
+        {[{id:"home",l:"🏠 HOME"},{id:"exercises",l:"⚡ EXERCISES"},{id:"log",l:"📋 LOG"},{id:"nutrition",l:"🔥 NUTRITION"},{id:"weight",l:"⚖️ WEIGHT"},{id:"calendar",l:"📅 CALENDAR"}].map(t=>(
           <button key={t.id} style={C.nb(tab===t.id)} onClick={()=>setTab(t.id)} className="pr">{t.l}</button>
         ))}
       </div>
@@ -416,7 +424,7 @@ export default function LIV() {
           </div>
           <div style={{fontSize:11,letterSpacing:3,color:"#444",marginBottom:10,fontFamily:"Barlow,sans-serif"}}>QUICK START</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[{l:"START WORKOUT",i:"⚡",a:()=>setTab("exercises")},{l:"LOG FOOD",i:"🥗",a:()=>{setTab("nutrition");setTimeout(()=>setShowFoodModal(true),100);}},{l:"VIEW CALENDAR",i:"📅",a:()=>setTab("calendar")},{l:"WORKOUT LOG",i:"📋",a:()=>setTab("log")}].map((b,i)=>(
+            {[{l:"START WORKOUT",i:"⚡",a:()=>setTab("exercises")},{l:"LOG FOOD",i:"🥗",a:()=>{setTab("nutrition");setTimeout(()=>setShowFoodModal(true),100);}},{l:"LOG WEIGHT",i:"⚖️",a:()=>{setTab("weight");setTimeout(()=>setShowWeightModal(true),100);}},{l:"WORKOUT LOG",i:"📋",a:()=>setTab("log")}].map((b,i)=>(
               <button key={i} onClick={b.a} className="pr" style={{padding:"18px 10px",borderRadius:12,border:"1px solid #1e1e1e",background:"#111",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:2,color:"#fff",textAlign:"center"}}>
                 <div style={{fontSize:24,marginBottom:6}}>{b.i}</div>{b.l}
               </button>
@@ -666,6 +674,160 @@ export default function LIV() {
           )}
         </div>
       )}
+
+      {tab==="weight"&&(()=>{
+        const wg = weightGoal;
+        const activityMultipliers = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryActive:1.9 };
+        const tdee = Math.round(wg.bmr * (activityMultipliers[wg.activityLevel]||1.55));
+        // Medical/research guidelines: safe deficit 500-1000 cal/day = 0.5-1 lb/week
+        const deficit500 = tdee - 500;
+        const deficit750 = tdee - 750;
+        const deficit1000 = tdee - 1000;
+        const lbsToLose = wg.current - wg.goal;
+        const weeksAt05 = lbsToLose / 0.5;
+        const weeksAt075 = lbsToLose / 0.75;
+        const weeksAt1 = lbsToLose / 1.0;
+        const addWeeks = (w) => { const d = new Date(); d.setDate(d.getDate() + Math.round(w*7)); return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); };
+        const latestWeight = weightLog.length > 0 ? weightLog[weightLog.length-1].weight : wg.current;
+        const startWeight = weightLog.length > 0 ? weightLog[0].weight : wg.current;
+        const totalLost = Math.max(0, startWeight - latestWeight).toFixed(1);
+        const toGo = Math.max(0, latestWeight - wg.goal).toFixed(1);
+        const pctDone = lbsToLose > 0 ? Math.min(100, Math.round(((wg.current - latestWeight) / lbsToLose) * 100)) : 0;
+        // 7-day rolling average
+        const last7 = weightLog.slice(-7);
+        const avg7 = last7.length > 0 ? (last7.reduce((s,e)=>s+e.weight,0)/last7.length).toFixed(1) : latestWeight;
+        return(
+        <div style={C.sec} className="sl">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontSize:22,letterSpacing:3}}>WEIGHT</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowWeightModal(true)} className="pr" style={{background:"#ff4500",border:"none",color:"#fff",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>+ LOG</button>
+              <button onClick={()=>{setWeightGoalForm({...wg});setShowWeightGoalModal(true);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>EDIT GOALS</button>
+            </div>
+          </div>
+
+          {/* Current stats */}
+          <div style={C.acard}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",textAlign:"center",gap:8,marginBottom:16}}>
+              <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>CURRENT</div><div style={{fontSize:32}}>{latestWeight}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
+              <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>GOAL</div><div style={{fontSize:32}}>{wg.goal}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
+              <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>TO GO</div><div style={{fontSize:32,color:"#ff8c00"}}>{toGo}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginBottom:6}}>
+              <span>PROGRESS</span><span style={{color:"#ff4500"}}>{pctDone}%</span>
+            </div>
+            <div style={{background:"#1a1a1a",borderRadius:20,height:10,overflow:"hidden",marginBottom:8}}>
+              <div style={{background:"linear-gradient(90deg,#ff4500,#ff8c00)",height:"100%",width:`${pctDone}%`,borderRadius:20,transition:"width 0.6s ease"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:10,color:"#333"}}>
+              <span>{wg.current} {wg.unit} start</span><span>{wg.goal} {wg.unit} goal</span>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+            <div style={C.card}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>TOTAL LOST</div><div style={{fontSize:28}}>{totalLost} <span style={{fontSize:14,color:"#555"}}>{wg.unit}</span></div></div>
+            <div style={C.card}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>7-DAY AVG</div><div style={{fontSize:28}}>{avg7} <span style={{fontSize:14,color:"#555"}}>{wg.unit}</span></div></div>
+          </div>
+
+          {/* Calorie deficit scenarios */}
+          <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:10}}>DEFICIT SCENARIOS</div>
+          <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Based on your TDEE of {tdee} cal/day (BMR {wg.bmr} × {wg.activityLevel} activity)</div>
+          {[
+            {rate:"0.5 lbs/week",deficit:500,cals:deficit500,weeks:weeksAt05,label:"Conservative",color:"#00d4ff",note:"Easiest to sustain, preserves muscle best"},
+            {rate:"0.75 lbs/week",deficit:750,cals:deficit750,weeks:weeksAt075,label:"Moderate",color:"#ff8c00",note:"Recommended by most dietitians"},
+            {rate:"1.0 lb/week",deficit:1000,cals:deficit1000,weeks:weeksAt1,label:"Aggressive",color:"#ff4500",note:"Max recommended by medical guidelines"},
+          ].map((s,i)=>(
+            <div key={i} style={{...C.card,borderLeft:`3px solid ${s.color}`,marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                <div>
+                  <div style={{fontSize:16,letterSpacing:1,color:s.color}}>{s.label} — {s.rate}</div>
+                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{s.note}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>{s.cals} cal/day</div>
+                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>−{s.deficit} deficit</div>
+                </div>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0e0e0e",borderRadius:8,padding:"8px 12px"}}>
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>🎯 GOAL DATE</div>
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:700,color:s.color}}>{addWeeks(s.weeks)}</div>
+              </div>
+            </div>
+          ))}
+
+          {/* Weight log history */}
+          {weightLog.length > 0 && (<>
+            <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:10,marginTop:8}}>WEIGHT HISTORY</div>
+            {[...weightLog].reverse().slice(0,14).map((entry,i)=>(
+              <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",marginBottom:6}}>
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888"}}>{new Date(entry.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{fontSize:18,letterSpacing:1,color:i<weightLog.length-1&&entry.weight<[...weightLog].reverse()[i+1]?.weight?"#00d4ff":i<weightLog.length-1&&entry.weight>[...weightLog].reverse()[i+1]?.weight?"#ff4444":"#fff"}}>{entry.weight} {wg.unit}</div>
+                  <button onClick={()=>setWeightLog(prev=>prev.filter((_,j)=>j!==weightLog.length-1-i))} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#555",width:26,height:26,borderRadius:"50%",cursor:"pointer",fontSize:13}}>×</button>
+                </div>
+              </div>
+            ))}
+          </>)}
+
+          {/* Log weight modal */}
+          {showWeightModal&&(
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                <div style={{fontSize:22,letterSpacing:2}}>LOG WEIGHT</div>
+                <button onClick={()=>setShowWeightModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+              <div style={C.lbl}>TODAY'S WEIGHT ({wg.unit})</div>
+              <input style={{...C.inp,fontSize:32,textAlign:"center",padding:20}} type="number" step="0.1" placeholder={`e.g. ${latestWeight}`} value={weightEntry} onChange={e=>setWeightEntry(e.target.value)} autoFocus/>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",textAlign:"center",marginBottom:20}}>Log first thing in the morning for most consistent results</div>
+              <button onClick={()=>{
+                if(!weightEntry) return;
+                const entry={date:todayKey(),weight:parseFloat(weightEntry)};
+                setWeightLog(prev=>{const filtered=prev.filter(e=>e.date!==todayKey());return[...filtered,entry].sort((a,b)=>a.date.localeCompare(b.date));});
+                setWeightGoal(prev=>({...prev,current:parseFloat(weightEntry)}));
+                setWeightEntry("");setShowWeightModal(false);
+              }} className="pr" style={C.btn()}>✓ SAVE WEIGHT</button>
+            </div>
+          )}
+
+          {/* Edit weight goals modal */}
+          {showWeightGoalModal&&(
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:20,letterSpacing:2}}>WEIGHT GOALS</div>
+                <button onClick={()=>setShowWeightGoalModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Update your stats to keep predictions accurate.</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div><div style={C.lbl}>CURRENT WEIGHT</div><input style={C.inp} type="number" step="0.1" value={weightGoalForm.current} onChange={e=>setWeightGoalForm(p=>({...p,current:parseFloat(e.target.value)||0}))}/></div>
+                <div><div style={C.lbl}>GOAL WEIGHT</div><input style={C.inp} type="number" step="0.1" value={weightGoalForm.goal} onChange={e=>setWeightGoalForm(p=>({...p,goal:parseFloat(e.target.value)||0}))}/></div>
+              </div>
+              <div style={C.lbl}>UNIT</div>
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
+                {["lbs","kg"].map(u=><button key={u} onClick={()=>setWeightGoalForm(p=>({...p,unit:u}))} className="pr" style={{flex:1,padding:10,borderRadius:8,border:`1px solid ${weightGoalForm.unit===u?"#ff4500":"#2a2a2a"}`,background:weightGoalForm.unit===u?"#ff4500":"#1a1a1a",color:"#fff",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:14,letterSpacing:1}}>{u}</button>)}
+              </div>
+              <div style={C.lbl}>YOUR BMR (calories/day at rest)</div>
+              <input style={C.inp} type="number" value={weightGoalForm.bmr} onChange={e=>setWeightGoalForm(p=>({...p,bmr:parseInt(e.target.value)||0}))}/>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Your InBody BMR: 2,057. Update after new scans.</div>
+              <div style={C.lbl}>ACTIVITY LEVEL</div>
+              {[
+                {v:"sedentary",l:"Sedentary",d:"Desk job, little exercise"},
+                {v:"light",l:"Light",d:"Light exercise 1-3 days/week"},
+                {v:"moderate",l:"Moderate",d:"Exercise 3-5 days/week"},
+                {v:"active",l:"Active",d:"Hard exercise 6-7 days/week"},
+                {v:"veryActive",l:"Very Active",d:"Physical job + training"},
+              ].map(a=>(
+                <button key={a.v} onClick={()=>setWeightGoalForm(p=>({...p,activityLevel:a.v}))} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",border:`1px solid ${weightGoalForm.activityLevel===a.v?"#ff4500":"#1c1c1c"}`,marginBottom:6,padding:"10px 14px"}}>
+                  <div><div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:14,letterSpacing:1,color:weightGoalForm.activityLevel===a.v?"#ff4500":"#fff"}}>{a.l}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>{a.d}</div></div>
+                  {weightGoalForm.activityLevel===a.v&&<div style={{color:"#ff4500",fontSize:16}}>✓</div>}
+                </button>
+              ))}
+              <button onClick={()=>{setWeightGoal({...weightGoalForm});setShowWeightGoalModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
+            </div>
+          )}
+        </div>
+        );
+      })()}
 
       {tab==="calendar"&&(
         <div style={C.sec} className="sl">
