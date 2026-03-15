@@ -91,18 +91,77 @@ const ALL_LIBRARY = Object.entries(EXERCISE_LIBRARY).flatMap(([group, data]) =>
 );
 
 const PRESET_FOODS = [
-  { name:"Chicken Breast (6oz)", calories:280, protein:53, carbs:0, fat:6 },
-  { name:"Brown Rice (1 cup)", calories:215, protein:5, carbs:45, fat:2 },
-  { name:"Eggs (2 large)", calories:140, protein:12, carbs:1, fat:10 },
-  { name:"Greek Yogurt (1 cup)", calories:130, protein:22, carbs:9, fat:0 },
-  { name:"Banana", calories:105, protein:1, carbs:27, fat:0 },
-  { name:"Almonds (1oz)", calories:164, protein:6, carbs:6, fat:14 },
-  { name:"Salmon (6oz)", calories:354, protein:50, carbs:0, fat:16 },
-  { name:"Sweet Potato (medium)", calories:103, protein:2, carbs:24, fat:0 },
-  { name:"Whey Protein Shake", calories:130, protein:25, carbs:5, fat:2 },
-  { name:"Oatmeal (1 cup)", calories:307, protein:11, carbs:55, fat:5 },
-  { name:"Broccoli (1 cup)", calories:31, protein:3, carbs:6, fat:0 },
-  { name:"Avocado (half)", calories:120, protein:1, carbs:6, fat:11 },
+  // Proteins
+  {name:"Chicken Breast",calories:165,protein:31,carbs:0,fat:4,servingSize:100},
+  {name:"Ground Beef 93% Lean",calories:152,protein:24,carbs:0,fat:6,servingSize:100},
+  {name:"Ground Turkey",calories:149,protein:22,carbs:0,fat:7,servingSize:100},
+  {name:"Salmon",calories:208,protein:28,carbs:0,fat:10,servingSize:100},
+  {name:"Tuna (canned in water)",calories:109,protein:25,carbs:0,fat:1,servingSize:100},
+  {name:"Tilapia",calories:96,protein:20,carbs:0,fat:2,servingSize:100},
+  {name:"Shrimp",calories:99,protein:24,carbs:0,fat:1,servingSize:100},
+  {name:"Eggs",calories:155,protein:13,carbs:1,fat:11,servingSize:100},
+  {name:"Egg Whites",calories:52,protein:11,carbs:1,fat:0,servingSize:100},
+  {name:"Bacon",calories:417,protein:28,carbs:1,fat:33,servingSize:100},
+  {name:"Pork Tenderloin",calories:143,protein:26,carbs:0,fat:3,servingSize:100},
+  {name:"Steak (sirloin)",calories:207,protein:26,carbs:0,fat:11,servingSize:100},
+  {name:"Deli Turkey Breast",calories:84,protein:17,carbs:1,fat:1,servingSize:100},
+  {name:"Cottage Cheese",calories:98,protein:11,carbs:3,fat:4,servingSize:100},
+  {name:"Greek Yogurt (plain)",calories:59,protein:10,carbs:4,fat:0,servingSize:100},
+  {name:"Whey Protein Powder",calories:120,protein:24,carbs:3,fat:2,servingSize:100},
+  // Dairy
+  {name:"Whole Milk",calories:61,protein:3,carbs:5,fat:3,servingSize:100},
+  {name:"2% Milk",calories:50,protein:3,carbs:5,fat:2,servingSize:100},
+  {name:"Cheddar Cheese",calories:402,protein:25,carbs:1,fat:33,servingSize:100},
+  {name:"Mozzarella Cheese",calories:280,protein:22,carbs:2,fat:17,servingSize:100},
+  {name:"Butter",calories:717,protein:1,carbs:0,fat:81,servingSize:100},
+  // Grains
+  {name:"White Rice (cooked)",calories:130,protein:3,carbs:28,fat:0,servingSize:100},
+  {name:"Brown Rice (cooked)",calories:112,protein:3,carbs:24,fat:1,servingSize:100},
+  {name:"Oats (dry)",calories:389,protein:17,carbs:66,fat:7,servingSize:100},
+  {name:"White Bread",calories:265,protein:9,carbs:49,fat:3,servingSize:100},
+  {name:"Whole Wheat Bread",calories:247,protein:13,carbs:41,fat:4,servingSize:100},
+  {name:"Pasta (cooked)",calories:158,protein:6,carbs:31,fat:1,servingSize:100},
+  {name:"Flour Tortilla",calories:312,protein:8,carbs:51,fat:8,servingSize:100},
+  {name:"Quinoa (cooked)",calories:120,protein:4,carbs:21,fat:2,servingSize:100},
+  {name:"White Potato",calories:77,protein:2,carbs:17,fat:0,servingSize:100},
+  {name:"Sweet Potato",calories:86,protein:2,carbs:20,fat:0,servingSize:100},
+  // Fruits
+  {name:"Banana",calories:89,protein:1,carbs:23,fat:0,servingSize:100},
+  {name:"Apple",calories:52,protein:0,carbs:14,fat:0,servingSize:100},
+  {name:"Orange",calories:47,protein:1,carbs:12,fat:0,servingSize:100},
+  {name:"Strawberries",calories:32,protein:1,carbs:8,fat:0,servingSize:100},
+  {name:"Blueberries",calories:57,protein:1,carbs:14,fat:0,servingSize:100},
+  {name:"Mango",calories:60,protein:1,carbs:15,fat:0,servingSize:100},
+  {name:"Watermelon",calories:30,protein:1,carbs:8,fat:0,servingSize:100},
+  {name:"Pineapple",calories:50,protein:1,carbs:13,fat:0,servingSize:100},
+  // Vegetables
+  {name:"Broccoli",calories:34,protein:3,carbs:7,fat:0,servingSize:100},
+  {name:"Spinach",calories:23,protein:3,carbs:4,fat:0,servingSize:100},
+  {name:"Asparagus",calories:20,protein:2,carbs:4,fat:0,servingSize:100},
+  {name:"Green Beans",calories:31,protein:2,carbs:7,fat:0,servingSize:100},
+  {name:"Bell Pepper",calories:31,protein:1,carbs:6,fat:0,servingSize:100},
+  {name:"Cucumber",calories:15,protein:1,carbs:4,fat:0,servingSize:100},
+  {name:"Tomato",calories:18,protein:1,carbs:4,fat:0,servingSize:100},
+  {name:"Carrots",calories:41,protein:1,carbs:10,fat:0,servingSize:100},
+  {name:"Mushrooms",calories:22,protein:3,carbs:3,fat:0,servingSize:100},
+  {name:"Avocado",calories:160,protein:2,carbs:9,fat:15,servingSize:100},
+  // Fats & Nuts
+  {name:"Almonds",calories:579,protein:21,carbs:22,fat:50,servingSize:100},
+  {name:"Peanut Butter",calories:588,protein:25,carbs:20,fat:50,servingSize:100},
+  {name:"Almond Butter",calories:614,protein:21,carbs:19,fat:56,servingSize:100},
+  {name:"Olive Oil",calories:884,protein:0,carbs:0,fat:100,servingSize:100},
+  {name:"Walnuts",calories:654,protein:15,carbs:14,fat:65,servingSize:100},
+  {name:"Cashews",calories:553,protein:18,carbs:30,fat:44,servingSize:100},
+  // Legumes
+  {name:"Black Beans (cooked)",calories:132,protein:9,carbs:24,fat:1,servingSize:100},
+  {name:"Chickpeas (cooked)",calories:164,protein:9,carbs:27,fat:3,servingSize:100},
+  {name:"Lentils (cooked)",calories:116,protein:9,carbs:20,fat:0,servingSize:100},
+  // Snacks & Other
+  {name:"Quest Protein Bar",calories:200,protein:21,carbs:22,fat:9,servingSize:100},
+  {name:"Rice Cakes",calories:387,protein:8,carbs:81,fat:3,servingSize:100},
+  {name:"Dark Chocolate 70%",calories:598,protein:8,carbs:46,fat:43,servingSize:100},
+  {name:"Hummus",calories:166,protein:8,carbs:14,fat:10,servingSize:100},
+  {name:"Chipotle Chicken Bowl",calories:490,protein:56,carbs:22,fat:18,servingSize:100},
 ];
 
 const DAILY_TARGETS = { calories:2200, protein:180, carbs:220, fat:65 };
@@ -143,6 +202,7 @@ export default function LIV() {
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
   const [weightGoalForm, setWeightGoalForm] = useState({ current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" });
   const [backfillDay, setBackfillDay] = useState(null);
+  const [customFoods, setCustomFoods] = useState(() => loadLS("liv_customFoods", []));
   const [selectedDay, setSelectedDay] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [macroGoals, setMacroGoals] = useState(() => loadLS("liv_macroGoals", { calories:2040, protein:180, carbs:60, fat:100 }));
@@ -173,6 +233,7 @@ export default function LIV() {
   useEffect(() => { saveLS("liv_macroGoals", macroGoals); }, [macroGoals]);
   useEffect(() => { saveLS("liv_weightLog", weightLog); }, [weightLog]);
   useEffect(() => { saveLS("liv_weightGoal", weightGoal); }, [weightGoal]);
+  useEffect(() => { saveLS("liv_customFoods", customFoods); }, [customFoods]);
 
   useEffect(() => {
     if (isResting && restCountdown > 0) {
@@ -253,7 +314,7 @@ export default function LIV() {
     setServingUnit("g");
   };
 
-  const confirmServing = () => {
+  const confirmServing = (saveToMyFoods=false) => {
     if (!servingFood) return;
     const qty = parseFloat(servingQty) || 1;
     const base = servingFood.servingSize || 100;
@@ -269,13 +330,16 @@ export default function LIV() {
       fat: Math.round(servingFood.fat * scale),
       id: Date.now(),
     };
-    const key = servingFood._targetDate || todayKey();
+    if (saveToMyFoods) {
+      setCustomFoods(prev => [...prev.filter(f=>f.name!==servingFood.name), {...servingFood, _custom:true, _targetDate:undefined}]);
+    }
+    const key = servingFood._targetDate || backfillDay || todayKey();
     setFoodLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), scaled] }));
     setServingFood(null); setShowFoodModal(false); setScanState("idle"); setScanResult(null);
     setFoodSearch(""); setManualBarcode(""); stopScanner(); setBackfillDay(null);
   };
 
-  const addManualFood = () => {
+  const addManualFood = (saveToMyFoods=false) => {
     if (!manualMacros.name) return;
     const entry = {
       name: manualMacros.name,
@@ -283,8 +347,12 @@ export default function LIV() {
       protein: parseInt(manualMacros.protein)||0,
       carbs: parseInt(manualMacros.carbs)||0,
       fat: parseInt(manualMacros.fat)||0,
+      servingSize: 100,
       id: Date.now(),
     };
+    if (saveToMyFoods) {
+      setCustomFoods(prev => [...prev.filter(f=>f.name!==entry.name), {...entry, _custom:true}]);
+    }
     const key = backfillDay || todayKey();
     setFoodLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), entry] }));
     setShowManualEntry(false); setManualMacros({ name:"", calories:"", protein:"", carbs:"", fat:"" });
@@ -574,109 +642,113 @@ export default function LIV() {
           <button onClick={()=>setShowFoodModal(true)} className="pr" style={{...C.btn(),marginBottom:16}}>+ LOG FOOD</button>
           {todayFood.length===0?(<div style={{textAlign:"center",padding:"40px 20px"}}><div style={{fontSize:40,marginBottom:8}}>🥗</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>No food logged yet.</div></div>):todayFood.map(food=>(<div key={food.id} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div><button onClick={()=>removeFood(food.id)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button></div></div>))}
 
-          {showFoodModal&&(
-            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
-                <div>
-                  <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
-                  {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
-                </div>
-                <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-              </div>
-              <div style={{marginBottom:12}}/>
-              <div style={{...C.card,marginBottom:12,flexShrink:0}}>
-                <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
-                {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
-                {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
-                {scanState==="loading"&&(<div style={{textAlign:"center",padding:20,fontFamily:"Barlow,sans-serif",color:"#666"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div>Looking up product...</div>)}
-                {scanState==="result"&&scanResult&&(<><div style={{background:"#0d1a0d",border:"1px solid #1a3a1a",borderRadius:10,padding:14,marginBottom:12}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{scanResult.name}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center"}}>{[{l:"CALS",v:scanResult.calories,c:"#ff4500"},{l:"PROTEIN",v:`${scanResult.protein}g`,c:"#00d4ff"},{l:"CARBS",v:`${scanResult.carbs}g`,c:"#ffcc00"},{l:"FAT",v:`${scanResult.fat}g`,c:"#ff69b4"}].map((m,i)=>(<div key={i}><div style={{fontSize:16,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>))}</div></div><button onClick={()=>addFood(scanResult)} className="pr" style={{...C.btn(),fontSize:14,marginBottom:8}}>✓ ADD THIS FOOD</button><button onClick={()=>{setScanState("idle");setManualBarcode("");setScanResult(null);}} style={{...C.btn("ghost"),fontSize:13}}>SCAN ANOTHER</button></>)}
-                {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
-              </div>
-              <div style={{...C.lbl,flexShrink:0}}>SEARCH FOOD DATABASE</div>
-              <input style={{...C.inp,flexShrink:0}} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
-              <div style={{paddingBottom:40}}>
-                {PRESET_FOODS.filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase())).map((food,i)=>(<div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div></div>))}
-              </div>
-            </div>
-          )}
 
-          {/* SERVING SIZE MODAL */}
-          {servingFood&&(
-            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-                <div style={{fontSize:20,letterSpacing:2}}>SERVING SIZE</div>
-                <button onClick={()=>setServingFood(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-              </div>
-              <div style={{...C.card,marginBottom:16}}>
-                <div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:4}}>{servingFood.name}</div>
-                <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>Per 100g: {servingFood.calories} cal · P:{servingFood.protein}g · C:{servingFood.carbs}g · F:{servingFood.fat}g</div>
-              </div>
-              <div style={C.lbl}>AMOUNT</div>
-              <input style={C.inp} type="number" placeholder="e.g. 73" value={servingQty} onChange={e=>setServingQty(e.target.value)}/>
-              <div style={C.lbl}>UNIT</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
-                {["g","oz","lbs","kg","ml","cups","tbsp","tsp","piece"].map(u=>(
-                  <button key={u} onClick={()=>setServingUnit(u)} className="pr" style={{padding:"8px 14px",borderRadius:20,border:`1px solid ${servingUnit===u?"#ff4500":"#2a2a2a"}`,background:servingUnit===u?"#ff4500":"#1a1a1a",color:servingUnit===u?"#fff":"#666",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>{u}</button>
-                ))}
-              </div>
-              {(()=>{
-                const qty=parseFloat(servingQty)||0;
-                const base=servingFood.servingSize||100;
-                const gramsMap={g:1,oz:28.35,lbs:453.59,kg:1000,ml:1,cups:240,tbsp:15,tsp:5,piece:base};
-                const grams=qty*(gramsMap[servingUnit]||1);
-                const scale=servingUnit==="piece"?qty:grams/base;
-                const p={cal:Math.round(servingFood.calories*scale),pro:Math.round(servingFood.protein*scale),carb:Math.round(servingFood.carbs*scale),fat:Math.round(servingFood.fat*scale)};
-                return(
-                  <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginBottom:20}}>
-                    {[{l:"CALS",v:p.cal,c:"#ff4500"},{l:"PROTEIN",v:`${p.pro}g`,c:"#00d4ff"},{l:"CARBS",v:`${p.carb}g`,c:"#ffcc00"},{l:"FAT",v:`${p.fat}g`,c:"#ff69b4"}].map((m,i)=>(
-                      <div key={i}><div style={{fontSize:20,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
-                    ))}
-                  </div>
-                );
-              })()}
-              <button onClick={confirmServing} className="pr" style={C.btn()}>✓ ADD TO LOG</button>
-            </div>
-          )}
-
-          {/* MANUAL MACRO ENTRY (scanner fallback) */}
-          {showManualEntry&&(
-            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{fontSize:20,letterSpacing:2}}>ENTER MACROS</div>
-                <button onClick={()=>setShowManualEntry(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-              </div>
-              <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Product found but macros were missing. Enter them manually.</div>
-              <div style={C.lbl}>PRODUCT NAME</div>
-              <input style={C.inp} value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.calories} onChange={e=>setManualMacros(p=>({...p,calories:e.target.value}))}/></div>
-                <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.protein} onChange={e=>setManualMacros(p=>({...p,protein:e.target.value}))}/></div>
-                <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.carbs} onChange={e=>setManualMacros(p=>({...p,carbs:e.target.value}))}/></div>
-                <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.fat} onChange={e=>setManualMacros(p=>({...p,fat:e.target.value}))}/></div>
-              </div>
-              <button onClick={addManualFood} className="pr" style={{...C.btn(),marginTop:8}}>✓ ADD TO LOG</button>
-            </div>
-          )}
-
-          {/* EDIT MACRO GOALS MODAL */}
-          {showGoalsModal&&(
-            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{fontSize:20,letterSpacing:2}}>DAILY GOALS</div>
-                <button onClick={()=>setShowGoalsModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-              </div>
-              <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Set your daily macro targets. These update your progress rings.</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:parseInt(e.target.value)||0}))}/></div>
-                <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:parseInt(e.target.value)||0}))}/></div>
-                <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:parseInt(e.target.value)||0}))}/></div>
-                <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:parseInt(e.target.value)||0}))}/></div>
-              </div>
-              <button onClick={()=>{setMacroGoals({...goalsForm});setShowGoalsModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
-            </div>
-          )}
         </div>
       )}
+
+      {/* FOOD MODALS - global, work from any tab */}
+        {showFoodModal&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
+              <div>
+                <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
+                {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
+              </div>
+              <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{marginBottom:12}}/>
+            <div style={{...C.card,marginBottom:12,flexShrink:0}}>
+              <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
+              {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
+              {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
+              {scanState==="loading"&&(<div style={{textAlign:"center",padding:20,fontFamily:"Barlow,sans-serif",color:"#666"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div>Looking up product...</div>)}
+              {scanState==="result"&&scanResult&&(<><div style={{background:"#0d1a0d",border:"1px solid #1a3a1a",borderRadius:10,padding:14,marginBottom:12}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{scanResult.name}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center"}}>{[{l:"CALS",v:scanResult.calories,c:"#ff4500"},{l:"PROTEIN",v:`${scanResult.protein}g`,c:"#00d4ff"},{l:"CARBS",v:`${scanResult.carbs}g`,c:"#ffcc00"},{l:"FAT",v:`${scanResult.fat}g`,c:"#ff69b4"}].map((m,i)=>(<div key={i}><div style={{fontSize:16,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>))}</div></div><button onClick={()=>addFood(scanResult)} className="pr" style={{...C.btn(),fontSize:14,marginBottom:8}}>✓ ADD THIS FOOD</button><button onClick={()=>{setScanState("idle");setManualBarcode("");setScanResult(null);}} style={{...C.btn("ghost"),fontSize:13}}>SCAN ANOTHER</button></>)}
+              {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
+            </div>
+            <div style={{...C.lbl,flexShrink:0}}>SEARCH FOOD DATABASE</div>
+            <input style={{...C.inp,flexShrink:0}} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
+            <div style={{paddingBottom:40}}>
+              {[...customFoods.map(f=>({...f,_custom:true})), ...PRESET_FOODS].filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase())).map((food,i)=>(<div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>{food._custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1}}>MY FOOD</span>}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div></div>))}
+            </div>
+          </div>
+        )}
+
+        {/* SERVING SIZE MODAL */}
+        {servingFood&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div style={{fontSize:20,letterSpacing:2}}>SERVING SIZE</div>
+              <button onClick={()=>setServingFood(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{...C.card,marginBottom:16}}>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:4}}>{servingFood.name}</div>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>Per 100g: {servingFood.calories} cal · P:{servingFood.protein}g · C:{servingFood.carbs}g · F:{servingFood.fat}g</div>
+            </div>
+            <div style={C.lbl}>AMOUNT</div>
+            <input style={C.inp} type="number" placeholder="e.g. 73" value={servingQty} onChange={e=>setServingQty(e.target.value)}/>
+            <div style={C.lbl}>UNIT</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
+              {["g","oz","lbs","kg","ml","cups","tbsp","tsp","piece"].map(u=>(
+                <button key={u} onClick={()=>setServingUnit(u)} className="pr" style={{padding:"8px 14px",borderRadius:20,border:`1px solid ${servingUnit===u?"#ff4500":"#2a2a2a"}`,background:servingUnit===u?"#ff4500":"#1a1a1a",color:servingUnit===u?"#fff":"#666",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>{u}</button>
+              ))}
+            </div>
+            {(()=>{
+              const qty=parseFloat(servingQty)||0;
+              const base=servingFood.servingSize||100;
+              const gramsMap={g:1,oz:28.35,lbs:453.59,kg:1000,ml:1,cups:240,tbsp:15,tsp:5,piece:base};
+              const grams=qty*(gramsMap[servingUnit]||1);
+              const scale=servingUnit==="piece"?qty:grams/base;
+              const p={cal:Math.round(servingFood.calories*scale),pro:Math.round(servingFood.protein*scale),carb:Math.round(servingFood.carbs*scale),fat:Math.round(servingFood.fat*scale)};
+              return(
+                <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginBottom:20}}>
+                  {[{l:"CALS",v:p.cal,c:"#ff4500"},{l:"PROTEIN",v:`${p.pro}g`,c:"#00d4ff"},{l:"CARBS",v:`${p.carb}g`,c:"#ffcc00"},{l:"FAT",v:`${p.fat}g`,c:"#ff69b4"}].map((m,i)=>(
+                    <div key={i}><div style={{fontSize:20,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>confirmServing(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button><button onClick={()=>confirmServing(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button></div>
+          </div>
+        )}
+
+        {/* MANUAL MACRO ENTRY (scanner fallback) */}
+        {showManualEntry&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:20,letterSpacing:2}}>ENTER MACROS</div>
+              <button onClick={()=>setShowManualEntry(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Product found but macros were missing. Enter them manually.</div>
+            <div style={C.lbl}>PRODUCT NAME</div>
+            <input style={C.inp} value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.calories} onChange={e=>setManualMacros(p=>({...p,calories:e.target.value}))}/></div>
+              <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.protein} onChange={e=>setManualMacros(p=>({...p,protein:e.target.value}))}/></div>
+              <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.carbs} onChange={e=>setManualMacros(p=>({...p,carbs:e.target.value}))}/></div>
+              <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.fat} onChange={e=>setManualMacros(p=>({...p,fat:e.target.value}))}/></div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}><button onClick={()=>addManualFood(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button><button onClick={()=>addManualFood(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button></div>
+          </div>
+        )}
+
+        {/* EDIT MACRO GOALS MODAL */}
+        {showGoalsModal&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:20,letterSpacing:2}}>DAILY GOALS</div>
+              <button onClick={()=>setShowGoalsModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Set your daily macro targets. These update your progress rings.</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:parseInt(e.target.value)||0}))}/></div>
+              <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:parseInt(e.target.value)||0}))}/></div>
+              <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:parseInt(e.target.value)||0}))}/></div>
+              <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:parseInt(e.target.value)||0}))}/></div>
+            </div>
+            <button onClick={()=>{setMacroGoals({...goalsForm});setShowGoalsModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
+          </div>
+        )}
+
 
       {tab==="weight"&&(()=>{
         const wg = weightGoal;
@@ -894,7 +966,7 @@ export default function LIV() {
 
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:dayWorkout.length>0?16:0,marginBottom:8}}>
                   <div style={{fontSize:13,letterSpacing:3,color:"#ff4500"}}>🥗 NUTRITION{dayFood.length>0?` — ${totalCals} CALS · ${totalProtein}G PROTEIN`:""}</div>
-                  <button onClick={()=>{setBackfillDay(selectedDay);setSelectedDay(null);setShowFoodModal(true);}} style={{background:"#ff4500",border:"none",color:"#fff",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD FOOD</button>
+                  <button onClick={()=>{setBackfillDay(selectedDay);setShowFoodModal(true);}} style={{background:"#ff4500",border:"none",color:"#fff",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD FOOD</button>
                 </div>
                 {dayFood.length>0&&dayFood.map((food,i)=>(
                   <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
