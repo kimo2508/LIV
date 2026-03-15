@@ -142,6 +142,7 @@ export default function LIV() {
   const [weightEntry, setWeightEntry] = useState("");
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
   const [weightGoalForm, setWeightGoalForm] = useState({ current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" });
+  const [backfillDay, setBackfillDay] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [macroGoals, setMacroGoals] = useState(() => loadLS("liv_macroGoals", { calories:2040, protein:180, carbs:60, fat:100 }));
@@ -240,14 +241,14 @@ export default function LIV() {
     } catch { setScanState("error"); }
   };
 
-  const addFood = (food) => {
+  const addFood = (food, targetDate=null) => {
     // If food has zeros across the board from scanner, open manual entry instead
     if ((food.calories===0||food.calories==="0") && (food.protein===0||food.protein==="0")) {
       setManualMacros({ name:food.name, calories:"", protein:"", carbs:"", fat:"" });
       setShowManualEntry(true);
       return;
     }
-    setServingFood(food);
+    setServingFood({...food, _targetDate: targetDate});
     setServingQty("100");
     setServingUnit("g");
   };
@@ -255,10 +256,8 @@ export default function LIV() {
   const confirmServing = () => {
     if (!servingFood) return;
     const qty = parseFloat(servingQty) || 1;
-    // Base macros are per 100g by default for preset foods
     const base = servingFood.servingSize || 100;
     const unit = servingUnit;
-    // Convert to grams for scaling
     const gramsMap = { g:1, oz:28.35, lbs:453.59, kg:1000, ml:1, cups:240, tbsp:15, tsp:5, piece:base };
     const grams = qty * (gramsMap[unit] || 1);
     const scale = unit === "piece" ? qty : grams / base;
@@ -270,10 +269,10 @@ export default function LIV() {
       fat: Math.round(servingFood.fat * scale),
       id: Date.now(),
     };
-    const key = todayKey();
+    const key = servingFood._targetDate || todayKey();
     setFoodLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), scaled] }));
     setServingFood(null); setShowFoodModal(false); setScanState("idle"); setScanResult(null);
-    setFoodSearch(""); setManualBarcode(""); stopScanner();
+    setFoodSearch(""); setManualBarcode(""); stopScanner(); setBackfillDay(null);
   };
 
   const addManualFood = () => {
@@ -286,15 +285,15 @@ export default function LIV() {
       fat: parseInt(manualMacros.fat)||0,
       id: Date.now(),
     };
-    const key = todayKey();
+    const key = backfillDay || todayKey();
     setFoodLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), entry] }));
     setShowManualEntry(false); setManualMacros({ name:"", calories:"", protein:"", carbs:"", fat:"" });
     setShowFoodModal(false); setScanState("idle"); setScanResult(null);
-    setFoodSearch(""); setManualBarcode(""); stopScanner();
+    setFoodSearch(""); setManualBarcode(""); stopScanner(); setBackfillDay(null);
   };
 
-  const removeFood = (id) => {
-    const key = todayKey();
+  const removeFood = (id, date=null) => {
+    const key = date || todayKey();
     setFoodLog(prev => ({ ...prev, [key]: (prev[key]||[]).filter(f => f.id !== id) }));
   };
 
@@ -577,10 +576,14 @@ export default function LIV() {
 
           {showFoodModal&&(
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexShrink:0}}>
-                <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
-                <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
+                <div>
+                  <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
+                  {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
+                </div>
+                <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
               </div>
+              <div style={{marginBottom:12}}/>
               <div style={{...C.card,marginBottom:12,flexShrink:0}}>
                 <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
                 {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
@@ -889,21 +892,26 @@ export default function LIV() {
                   ))}
                 </>)}
 
-                {dayFood.length>0&&(<>
-                  <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:8,marginTop:dayWorkout.length>0?16:0}}>🥗 NUTRITION — {totalCals} CALS · {totalProtein}G PROTEIN</div>
-                  {dayFood.map((food,i)=>(
-                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <div>
-                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
-                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
-                      </div>
-                      <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:dayWorkout.length>0?16:0,marginBottom:8}}>
+                  <div style={{fontSize:13,letterSpacing:3,color:"#ff4500"}}>🥗 NUTRITION{dayFood.length>0?` — ${totalCals} CALS · ${totalProtein}G PROTEIN`:""}</div>
+                  <button onClick={()=>{setBackfillDay(selectedDay);setSelectedDay(null);setShowFoodModal(true);}} style={{background:"#ff4500",border:"none",color:"#fff",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD FOOD</button>
+                </div>
+                {dayFood.length>0&&dayFood.map((food,i)=>(
+                  <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
                     </div>
-                  ))}
-                </>)}
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
+                      <button onClick={()=>removeFood(food.id,selectedDay)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
+                    </div>
+                  </div>
+                ))}
+                {dayFood.length===0&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#444",padding:"8px 0 12px"}}>No food logged for this day.</div>}
 
                 {dayWorkout.length===0&&dayFood.length===0&&(
-                  <div style={{textAlign:"center",padding:"60px 20px"}}><div style={{fontSize:48,marginBottom:12}}>📭</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>Nothing logged for this day.</div></div>
+                  <div style={{textAlign:"center",padding:"20px 20px 40px"}}><div style={{fontSize:48,marginBottom:12}}>📭</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>Nothing logged for this day.</div></div>
                 )}
                 <div style={{paddingBottom:40}}/>
               </div>
