@@ -196,11 +196,11 @@ export default function LIV() {
   const [customForm, setCustomForm] = useState({ name:"", muscleGroup:"Chest", equipment:"", difficulty:"Beginner", alternatives:"" });
   const [showFoodModal, setShowFoodModal] = useState(false);
   const [weightLog, setWeightLog] = useState(() => loadLS("liv_weightLog", []));
-  const [weightGoal, setWeightGoal] = useState(() => loadLS("liv_weightGoal", { current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" }));
+  const [weightGoal, setWeightGoal] = useState(() => loadLS("liv_weightGoal", { current:0, goal:0, unit:"lbs", bmr:0, activityLevel:"moderate" }));
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weightEntry, setWeightEntry] = useState("");
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
-  const [weightGoalForm, setWeightGoalForm] = useState({ current:249.5, goal:218, unit:"lbs", bmr:2057, activityLevel:"moderate" });
+  const [weightGoalForm, setWeightGoalForm] = useState({ current:0, goal:0, unit:"lbs", bmr:0, activityLevel:"moderate" });
   const [backfillDay, setBackfillDay] = useState(null);
   const [customFoods, setCustomFoods] = useState(() => loadLS("liv_customFoods", []));
   const [selectedDay, setSelectedDay] = useState(null);
@@ -883,7 +883,7 @@ export default function LIV() {
               </div>
               <div style={C.lbl}>YOUR BMR (calories/day at rest)</div>
               <input style={C.inp} type="number" value={weightGoalForm.bmr} onChange={e=>setWeightGoalForm(p=>({...p,bmr:parseInt(e.target.value)||0}))}/>
-              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Your InBody BMR: 2,057. Update after new scans.</div>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Use an online BMR calculator or InBody scan result.</div>
               <div style={C.lbl}>ACTIVITY LEVEL</div>
               {[
                 {v:"sedentary",l:"Sedentary",d:"Desk job, little exercise"},
