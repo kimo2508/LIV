@@ -853,7 +853,7 @@ export default function LIV() {
                 <button onClick={()=>setShowWeightModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
               </div>
               <div style={C.lbl}>TODAY'S WEIGHT ({wg.unit})</div>
-              <input style={{...C.inp,fontSize:32,textAlign:"center",padding:20}} type="number" step="0.1" placeholder={`e.g. ${latestWeight}`} value={weightEntry} onChange={e=>setWeightEntry(e.target.value)} autoFocus/>
+              <input style={{...C.inp,fontSize:32,textAlign:"center",padding:20}} type="number" step="0.1" placeholder="e.g. 185.5" value={weightEntry} onChange={e=>setWeightEntry(e.target.value)} autoFocus/>
               <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",textAlign:"center",marginBottom:20}}>Log first thing in the morning for most consistent results</div>
               <button onClick={()=>{
                 if(!weightEntry) return;
@@ -874,15 +874,15 @@ export default function LIV() {
               </div>
               <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Update your stats to keep predictions accurate.</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <div><div style={C.lbl}>CURRENT WEIGHT</div><input style={C.inp} type="number" step="0.1" value={weightGoalForm.current} onChange={e=>setWeightGoalForm(p=>({...p,current:parseFloat(e.target.value)||0}))}/></div>
-                <div><div style={C.lbl}>GOAL WEIGHT</div><input style={C.inp} type="number" step="0.1" value={weightGoalForm.goal} onChange={e=>setWeightGoalForm(p=>({...p,goal:parseFloat(e.target.value)||0}))}/></div>
+                <div><div style={C.lbl}>CURRENT WEIGHT</div><input style={C.inp} type="number" step="0.1" placeholder="e.g. 185" value={weightGoalForm.current||""} onChange={e=>setWeightGoalForm(p=>({...p,current:parseFloat(e.target.value)||0}))}/></div>
+                <div><div style={C.lbl}>GOAL WEIGHT</div><input style={C.inp} type="number" step="0.1" placeholder="e.g. 165" value={weightGoalForm.goal||""} onChange={e=>setWeightGoalForm(p=>({...p,goal:parseFloat(e.target.value)||0}))}/></div>
               </div>
               <div style={C.lbl}>UNIT</div>
               <div style={{display:"flex",gap:8,marginBottom:12}}>
                 {["lbs","kg"].map(u=><button key={u} onClick={()=>setWeightGoalForm(p=>({...p,unit:u}))} className="pr" style={{flex:1,padding:10,borderRadius:8,border:`1px solid ${weightGoalForm.unit===u?"#ff4500":"#2a2a2a"}`,background:weightGoalForm.unit===u?"#ff4500":"#1a1a1a",color:"#fff",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:14,letterSpacing:1}}>{u}</button>)}
               </div>
               <div style={C.lbl}>YOUR BMR (calories/day at rest)</div>
-              <input style={C.inp} type="number" value={weightGoalForm.bmr} onChange={e=>setWeightGoalForm(p=>({...p,bmr:parseInt(e.target.value)||0}))}/>
+              <input style={C.inp} type="number" placeholder="e.g. 1800" value={weightGoalForm.bmr||""} onChange={e=>setWeightGoalForm(p=>({...p,bmr:parseInt(e.target.value)||0}))}/>
               <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Use an online BMR calculator or InBody scan result.</div>
               <div style={C.lbl}>ACTIVITY LEVEL</div>
               {[
