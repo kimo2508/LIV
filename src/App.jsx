@@ -90,78 +90,93 @@ const ALL_LIBRARY = Object.entries(EXERCISE_LIBRARY).flatMap(([group, data]) =>
   data.exercises.map(ex => ({ ...ex, muscleGroup: group }))
 );
 
+// MET values for calorie estimation (calories = MET * weight_kg * hours)
+// We use a base weight of 85kg (~187 lbs) as default since user is ~253 lbs
+// Effort levels map to MET ranges
+const CARDIO_MET = {
+  easy: 5,    // light jogging, easy cycling, casual swim
+  medium: 8,  // moderate run, steady cycling, brisk walk on incline
+  hard: 11,   // running fast, HIIT, hard rowing
+};
+
+function estimateCardioCalories(minutes, effort) {
+  const weightKg = 115; // ~253 lbs, will use a reasonable default
+  const met = CARDIO_MET[effort] || 8;
+  return Math.round(met * weightKg * (minutes / 60));
+}
+
 const PRESET_FOODS = [
   // Proteins
-  {name:"Chicken Breast",calories:165,protein:31,carbs:0,fat:4,servingSize:100},
-  {name:"Ground Beef 93% Lean",calories:152,protein:24,carbs:0,fat:6,servingSize:100},
-  {name:"Ground Turkey",calories:149,protein:22,carbs:0,fat:7,servingSize:100},
-  {name:"Salmon",calories:208,protein:28,carbs:0,fat:10,servingSize:100},
-  {name:"Tuna (canned in water)",calories:109,protein:25,carbs:0,fat:1,servingSize:100},
-  {name:"Tilapia",calories:96,protein:20,carbs:0,fat:2,servingSize:100},
-  {name:"Shrimp",calories:99,protein:24,carbs:0,fat:1,servingSize:100},
-  {name:"Eggs",calories:155,protein:13,carbs:1,fat:11,servingSize:100},
-  {name:"Egg Whites",calories:52,protein:11,carbs:1,fat:0,servingSize:100},
-  {name:"Bacon",calories:417,protein:28,carbs:1,fat:33,servingSize:100},
-  {name:"Pork Tenderloin",calories:143,protein:26,carbs:0,fat:3,servingSize:100},
-  {name:"Steak (sirloin)",calories:207,protein:26,carbs:0,fat:11,servingSize:100},
-  {name:"Deli Turkey Breast",calories:84,protein:17,carbs:1,fat:1,servingSize:100},
-  {name:"Cottage Cheese",calories:98,protein:11,carbs:3,fat:4,servingSize:100},
-  {name:"Greek Yogurt (plain)",calories:59,protein:10,carbs:4,fat:0,servingSize:100},
-  {name:"Whey Protein Powder",calories:120,protein:24,carbs:3,fat:2,servingSize:100},
+  {name:"Chicken Breast",calories:165,protein:31,carbs:0,fat:4,servingSize:100,servingUnit:"g"},
+  {name:"Ground Beef 93% Lean",calories:152,protein:24,carbs:0,fat:6,servingSize:100,servingUnit:"g"},
+  {name:"Ground Turkey",calories:149,protein:22,carbs:0,fat:7,servingSize:100,servingUnit:"g"},
+  {name:"Salmon",calories:208,protein:28,carbs:0,fat:10,servingSize:100,servingUnit:"g"},
+  {name:"Tuna (canned in water)",calories:109,protein:25,carbs:0,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Tilapia",calories:96,protein:20,carbs:0,fat:2,servingSize:100,servingUnit:"g"},
+  {name:"Shrimp",calories:99,protein:24,carbs:0,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Eggs",calories:155,protein:13,carbs:1,fat:11,servingSize:100,servingUnit:"g"},
+  {name:"Egg Whites",calories:52,protein:11,carbs:1,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Bacon",calories:417,protein:28,carbs:1,fat:33,servingSize:100,servingUnit:"g"},
+  {name:"Pork Tenderloin",calories:143,protein:26,carbs:0,fat:3,servingSize:100,servingUnit:"g"},
+  {name:"Steak (sirloin)",calories:207,protein:26,carbs:0,fat:11,servingSize:100,servingUnit:"g"},
+  {name:"Deli Turkey Breast",calories:84,protein:17,carbs:1,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Cottage Cheese",calories:98,protein:11,carbs:3,fat:4,servingSize:100,servingUnit:"g"},
+  {name:"Greek Yogurt (plain)",calories:59,protein:10,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Whey Protein Powder",calories:120,protein:24,carbs:3,fat:2,servingSize:100,servingUnit:"g"},
   // Dairy
-  {name:"Whole Milk",calories:61,protein:3,carbs:5,fat:3,servingSize:100},
-  {name:"2% Milk",calories:50,protein:3,carbs:5,fat:2,servingSize:100},
-  {name:"Cheddar Cheese",calories:402,protein:25,carbs:1,fat:33,servingSize:100},
-  {name:"Mozzarella Cheese",calories:280,protein:22,carbs:2,fat:17,servingSize:100},
-  {name:"Butter",calories:717,protein:1,carbs:0,fat:81,servingSize:100},
+  {name:"Whole Milk",calories:61,protein:3,carbs:5,fat:3,servingSize:100,servingUnit:"g"},
+  {name:"2% Milk",calories:50,protein:3,carbs:5,fat:2,servingSize:100,servingUnit:"g"},
+  {name:"Cheddar Cheese",calories:402,protein:25,carbs:1,fat:33,servingSize:100,servingUnit:"g"},
+  {name:"Mozzarella Cheese",calories:280,protein:22,carbs:2,fat:17,servingSize:100,servingUnit:"g"},
+  {name:"Butter",calories:717,protein:1,carbs:0,fat:81,servingSize:100,servingUnit:"g"},
   // Grains
-  {name:"White Rice (cooked)",calories:130,protein:3,carbs:28,fat:0,servingSize:100},
-  {name:"Brown Rice (cooked)",calories:112,protein:3,carbs:24,fat:1,servingSize:100},
-  {name:"Oats (dry)",calories:389,protein:17,carbs:66,fat:7,servingSize:100},
-  {name:"White Bread",calories:265,protein:9,carbs:49,fat:3,servingSize:100},
-  {name:"Whole Wheat Bread",calories:247,protein:13,carbs:41,fat:4,servingSize:100},
-  {name:"Pasta (cooked)",calories:158,protein:6,carbs:31,fat:1,servingSize:100},
-  {name:"Flour Tortilla",calories:312,protein:8,carbs:51,fat:8,servingSize:100},
-  {name:"Quinoa (cooked)",calories:120,protein:4,carbs:21,fat:2,servingSize:100},
-  {name:"White Potato",calories:77,protein:2,carbs:17,fat:0,servingSize:100},
-  {name:"Sweet Potato",calories:86,protein:2,carbs:20,fat:0,servingSize:100},
+  {name:"White Rice (cooked)",calories:130,protein:3,carbs:28,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Brown Rice (cooked)",calories:112,protein:3,carbs:24,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Oats (dry)",calories:389,protein:17,carbs:66,fat:7,servingSize:100,servingUnit:"g"},
+  {name:"White Bread",calories:265,protein:9,carbs:49,fat:3,servingSize:100,servingUnit:"g"},
+  {name:"Whole Wheat Bread",calories:247,protein:13,carbs:41,fat:4,servingSize:100,servingUnit:"g"},
+  {name:"Pasta (cooked)",calories:158,protein:6,carbs:31,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Flour Tortilla",calories:312,protein:8,carbs:51,fat:8,servingSize:100,servingUnit:"g"},
+  {name:"Quinoa (cooked)",calories:120,protein:4,carbs:21,fat:2,servingSize:100,servingUnit:"g"},
+  {name:"White Potato",calories:77,protein:2,carbs:17,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Sweet Potato",calories:86,protein:2,carbs:20,fat:0,servingSize:100,servingUnit:"g"},
   // Fruits
-  {name:"Banana",calories:89,protein:1,carbs:23,fat:0,servingSize:100},
-  {name:"Apple",calories:52,protein:0,carbs:14,fat:0,servingSize:100},
-  {name:"Orange",calories:47,protein:1,carbs:12,fat:0,servingSize:100},
-  {name:"Strawberries",calories:32,protein:1,carbs:8,fat:0,servingSize:100},
-  {name:"Blueberries",calories:57,protein:1,carbs:14,fat:0,servingSize:100},
-  {name:"Mango",calories:60,protein:1,carbs:15,fat:0,servingSize:100},
-  {name:"Watermelon",calories:30,protein:1,carbs:8,fat:0,servingSize:100},
-  {name:"Pineapple",calories:50,protein:1,carbs:13,fat:0,servingSize:100},
+  {name:"Banana",calories:89,protein:1,carbs:23,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Apple",calories:52,protein:0,carbs:14,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Orange",calories:47,protein:1,carbs:12,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Strawberries",calories:32,protein:1,carbs:8,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Blueberries",calories:57,protein:1,carbs:14,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Mango",calories:60,protein:1,carbs:15,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Watermelon",calories:30,protein:1,carbs:8,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Pineapple",calories:50,protein:1,carbs:13,fat:0,servingSize:100,servingUnit:"g"},
   // Vegetables
-  {name:"Broccoli",calories:34,protein:3,carbs:7,fat:0,servingSize:100},
-  {name:"Spinach",calories:23,protein:3,carbs:4,fat:0,servingSize:100},
-  {name:"Asparagus",calories:20,protein:2,carbs:4,fat:0,servingSize:100},
-  {name:"Green Beans",calories:31,protein:2,carbs:7,fat:0,servingSize:100},
-  {name:"Bell Pepper",calories:31,protein:1,carbs:6,fat:0,servingSize:100},
-  {name:"Cucumber",calories:15,protein:1,carbs:4,fat:0,servingSize:100},
-  {name:"Tomato",calories:18,protein:1,carbs:4,fat:0,servingSize:100},
-  {name:"Carrots",calories:41,protein:1,carbs:10,fat:0,servingSize:100},
-  {name:"Mushrooms",calories:22,protein:3,carbs:3,fat:0,servingSize:100},
-  {name:"Avocado",calories:160,protein:2,carbs:9,fat:15,servingSize:100},
+  {name:"Broccoli",calories:34,protein:3,carbs:7,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Spinach",calories:23,protein:3,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Asparagus",calories:20,protein:2,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Green Beans",calories:31,protein:2,carbs:7,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Bell Pepper",calories:31,protein:1,carbs:6,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Cucumber",calories:15,protein:1,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Tomato",calories:18,protein:1,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Carrots",calories:41,protein:1,carbs:10,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Mushrooms",calories:22,protein:3,carbs:3,fat:0,servingSize:100,servingUnit:"g"},
+  {name:"Avocado",calories:160,protein:2,carbs:9,fat:15,servingSize:100,servingUnit:"g"},
   // Fats & Nuts
-  {name:"Almonds",calories:579,protein:21,carbs:22,fat:50,servingSize:100},
-  {name:"Peanut Butter",calories:588,protein:25,carbs:20,fat:50,servingSize:100},
-  {name:"Almond Butter",calories:614,protein:21,carbs:19,fat:56,servingSize:100},
-  {name:"Olive Oil",calories:884,protein:0,carbs:0,fat:100,servingSize:100},
-  {name:"Walnuts",calories:654,protein:15,carbs:14,fat:65,servingSize:100},
-  {name:"Cashews",calories:553,protein:18,carbs:30,fat:44,servingSize:100},
+  {name:"Almonds",calories:579,protein:21,carbs:22,fat:50,servingSize:100,servingUnit:"g"},
+  {name:"Peanut Butter",calories:588,protein:25,carbs:20,fat:50,servingSize:100,servingUnit:"g"},
+  {name:"Almond Butter",calories:614,protein:21,carbs:19,fat:56,servingSize:100,servingUnit:"g"},
+  {name:"Olive Oil",calories:884,protein:0,carbs:0,fat:100,servingSize:100,servingUnit:"g"},
+  {name:"Walnuts",calories:654,protein:15,carbs:14,fat:65,servingSize:100,servingUnit:"g"},
+  {name:"Cashews",calories:553,protein:18,carbs:30,fat:44,servingSize:100,servingUnit:"g"},
   // Legumes
-  {name:"Black Beans (cooked)",calories:132,protein:9,carbs:24,fat:1,servingSize:100},
-  {name:"Chickpeas (cooked)",calories:164,protein:9,carbs:27,fat:3,servingSize:100},
-  {name:"Lentils (cooked)",calories:116,protein:9,carbs:20,fat:0,servingSize:100},
+  {name:"Black Beans (cooked)",calories:132,protein:9,carbs:24,fat:1,servingSize:100,servingUnit:"g"},
+  {name:"Chickpeas (cooked)",calories:164,protein:9,carbs:27,fat:3,servingSize:100,servingUnit:"g"},
+  {name:"Lentils (cooked)",calories:116,protein:9,carbs:20,fat:0,servingSize:100,servingUnit:"g"},
   // Snacks & Other
-  {name:"Quest Protein Bar",calories:200,protein:21,carbs:22,fat:9,servingSize:100},
-  {name:"Rice Cakes",calories:387,protein:8,carbs:81,fat:3,servingSize:100},
-  {name:"Dark Chocolate 70%",calories:598,protein:8,carbs:46,fat:43,servingSize:100},
-  {name:"Hummus",calories:166,protein:8,carbs:14,fat:10,servingSize:100},
-  {name:"Chipotle Chicken Bowl",calories:490,protein:56,carbs:22,fat:18,servingSize:100},
+  {name:"Quest Protein Bar",calories:200,protein:21,carbs:22,fat:9,servingSize:100,servingUnit:"g"},
+  {name:"Rice Cakes",calories:387,protein:8,carbs:81,fat:3,servingSize:100,servingUnit:"g"},
+  {name:"Dark Chocolate 70%",calories:598,protein:8,carbs:46,fat:43,servingSize:100,servingUnit:"g"},
+  {name:"Hummus",calories:166,protein:8,carbs:14,fat:10,servingSize:100,servingUnit:"g"},
+  {name:"Chipotle Chicken Bowl",calories:490,protein:56,carbs:22,fat:18,servingSize:100,servingUnit:"g"},
 ];
 
 const DAILY_TARGETS = { calories:2200, protein:180, carbs:220, fat:65 };
@@ -174,6 +189,22 @@ function loadLS(key, fallback) {
 }
 function saveLS(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+// Parse serving size string from OpenFoodFacts (e.g. "414 ml", "1 bottle (414ml)", "28g")
+function parseServingSize(servingSizeStr) {
+  if (!servingSizeStr) return { size: 100, unit: "g" };
+  const str = servingSizeStr.toLowerCase();
+  // Try to find a number followed by a unit
+  const match = str.match(/(\d+(?:\.\d+)?)\s*(ml|g|oz|fl oz|cup|tbsp|tsp|l)/);
+  if (match) {
+    const size = parseFloat(match[1]);
+    let unit = match[2];
+    if (unit === "fl oz") unit = "oz";
+    if (unit === "l") { return { size: size * 1000, unit: "ml" }; }
+    return { size, unit };
+  }
+  return { size: 100, unit: "g" };
 }
 
 export default function LIV() {
@@ -217,6 +248,25 @@ export default function LIV() {
   const [scanResult, setScanResult] = useState(null);
   const [manualBarcode, setManualBarcode] = useState("");
   const [scanHint, setScanHint] = useState("Point camera at barcode...");
+
+  // Cardio logging state
+  const [cardioMinutes, setCardioMinutes] = useState("30");
+  const [cardioEffort, setCardioEffort] = useState("medium");
+  const [cardioRunning, setCardioRunning] = useState(false); // live timer running
+  const [cardioElapsed, setCardioElapsed] = useState(0); // seconds elapsed
+  const cardioTimerRef = useRef(null);
+
+  // Plank state
+  const [plankSets, setPlankSets] = useState(3);
+  const [plankSetDuration, setPlankSetDuration] = useState(60); // seconds per set
+  const [plankCurrentSet, setPlankCurrentSet] = useState(1);
+  const [plankCountdown, setPlankCountdown] = useState(60);
+  const [plankRunning, setPlankRunning] = useState(false);
+  const [plankDone, setPlankDone] = useState(false); // current set finished
+  const [plankResting, setPlankResting] = useState(false);
+  const [plankRestCountdown, setPlankRestCountdown] = useState(30);
+  const plankTimerRef = useRef(null);
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const restRef = useRef(null);
@@ -244,6 +294,40 @@ export default function LIV() {
 
   useEffect(() => { if (tab !== "nutrition") stopScanner(); }, [tab]);
 
+  // Cardio live timer
+  useEffect(() => {
+    if (cardioRunning) {
+      cardioTimerRef.current = setInterval(() => setCardioElapsed(e => e + 1), 1000);
+    } else {
+      clearInterval(cardioTimerRef.current);
+    }
+    return () => clearInterval(cardioTimerRef.current);
+  }, [cardioRunning]);
+
+  // Plank timer
+  useEffect(() => {
+    if (plankRunning && !plankResting) {
+      if (plankCountdown > 0) {
+        plankTimerRef.current = setTimeout(() => setPlankCountdown(c => c - 1), 1000);
+      } else {
+        // Set complete
+        setPlankRunning(false);
+        setPlankDone(true);
+      }
+    }
+    return () => clearTimeout(plankTimerRef.current);
+  }, [plankRunning, plankCountdown, plankResting]);
+
+  // Plank rest timer
+  useEffect(() => {
+    if (plankResting && plankRestCountdown > 0) {
+      plankTimerRef.current = setTimeout(() => setPlankRestCountdown(c => c - 1), 1000);
+    } else if (plankResting && plankRestCountdown === 0) {
+      setPlankResting(false);
+    }
+    return () => clearTimeout(plankTimerRef.current);
+  }, [plankResting, plankRestCountdown]);
+
   const stopScanner = useCallback(() => {
     try { readerRef.current?.reset(); readerRef.current = null; } catch {}
     try { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null; } catch {}
@@ -262,7 +346,6 @@ export default function LIV() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      // Use ZXing loaded from CDN via window.ZXing
       const ZXing = window.ZXing;
       if (!ZXing) { setScanHint("Scanner not ready. Use manual entry below."); return; }
       const hints = new Map();
@@ -289,13 +372,38 @@ export default function LIV() {
       const data = await res.json();
       if (data.status === 1) {
         const n = data.product.nutriments;
-        const serving = data.product.serving_size || "per serving";
+        const product = data.product;
+
+        // Parse actual serving size from the product
+        const servingSizeRaw = product.serving_size || "";
+        const parsed = parseServingSize(servingSizeRaw);
+
+        // Check if product has per-serving nutriment data
+        const hasServingData = n["energy-kcal_serving"] != null || n["proteins_serving"] != null;
+
+        // Store per-100g macros as the base for scaling
+        const per100g = {
+          calories: Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0)),
+          protein: parseFloat((n["proteins_100g"] || 0).toFixed(1)),
+          carbs: parseFloat((n["carbohydrates_100g"] || 0).toFixed(1)),
+          fat: parseFloat((n["fat_100g"] || 0).toFixed(1)),
+        };
+
+        // If we have per-serving data, derive per-100g equivalents from serving data for accuracy
+        // But prefer 100g data since it's more reliable
         setScanResult({
-          name: `${data.product.product_name || "Product"} (${serving})`,
-          calories: Math.round(n["energy-kcal_serving"] || n["energy-kcal_100g"] || 0),
-          protein: Math.round(n.proteins_serving || n.proteins_100g || 0),
-          carbs: Math.round(n.carbohydrates_serving || n.carbohydrates_100g || 0),
-          fat: Math.round(n.fat_serving || n.fat_100g || 0),
+          name: product.product_name || "Scanned Product",
+          // per-100g values (base for all calculations)
+          calories: per100g.calories,
+          protein: per100g.protein,
+          carbs: per100g.carbs,
+          fat: per100g.fat,
+          servingSize: parsed.size,
+          servingUnit: parsed.unit,
+          // actual serving display info for the result card
+          _actualServingLabel: servingSizeRaw || "100g",
+          _actualServingCalories: hasServingData ? Math.round(n["energy-kcal_serving"] || 0) : null,
+          _actualServingProtein: hasServingData ? Math.round(n["proteins_serving"] || 0) : null,
         });
         setScanState("result");
       } else setScanState("notfound");
@@ -303,25 +411,37 @@ export default function LIV() {
   };
 
   const addFood = (food, targetDate=null) => {
-    // If food has zeros across the board from scanner, open manual entry instead
     if ((food.calories===0||food.calories==="0") && (food.protein===0||food.protein==="0")) {
       setManualMacros({ name:food.name, calories:"", protein:"", carbs:"", fat:"" });
       setShowManualEntry(true);
       return;
     }
+    // Pre-populate with the product's actual serving size if available
+    const preQty = food.servingSize ? String(food.servingSize) : "100";
+    const preUnit = food.servingUnit || "g";
     setServingFood({...food, _targetDate: targetDate});
-    setServingQty("100");
-    setServingUnit("g");
+    setServingQty(preQty);
+    setServingUnit(preUnit);
   };
 
   const confirmServing = (saveToMyFoods=false) => {
     if (!servingFood) return;
     const qty = parseFloat(servingQty) || 1;
-    const base = servingFood.servingSize || 100;
     const unit = servingUnit;
-    const gramsMap = { g:1, oz:28.35, lbs:453.59, kg:1000, ml:1, cups:240, tbsp:15, tsp:5, piece:base };
-    const grams = qty * (gramsMap[unit] || 1);
-    const scale = unit === "piece" ? qty : grams / base;
+
+    // Convert everything to grams for scaling against per-100g base
+    const gramsMap = { g:1, oz:28.35, lbs:453.59, kg:1000, ml:1, cups:240, tbsp:15, tsp:5 };
+
+    let scale;
+    if (unit === "piece") {
+      // 1 piece = 1 full serving of the product's serving size
+      const baseGrams = (servingFood.servingSize || 100) * (gramsMap[servingFood.servingUnit || "g"] || 1);
+      scale = qty * baseGrams / 100;
+    } else {
+      const inputGrams = qty * (gramsMap[unit] || 1);
+      scale = inputGrams / 100;
+    }
+
     const scaled = {
       name: `${servingFood.name} (${qty}${unit})`,
       calories: Math.round(servingFood.calories * scale),
@@ -348,6 +468,7 @@ export default function LIV() {
       carbs: parseInt(manualMacros.carbs)||0,
       fat: parseInt(manualMacros.fat)||0,
       servingSize: 100,
+      servingUnit: "g",
       id: Date.now(),
     };
     if (saveToMyFoods) {
@@ -373,8 +494,23 @@ export default function LIV() {
   const startExercise = (ex) => {
     setActiveExercise({ ...ex, defaultSets:ex.defaultSets||4, defaultReps:ex.defaultReps||10 });
     setCurrentSet(1); setRepsLeft(ex.defaultReps||10);
-    setIsResting(false); setCompletedSets({}); setTab("active");
+    setIsResting(false); setCompletedSets({});
+
+    // Reset cardio state
+    setCardioMinutes("30"); setCardioEffort("medium");
+    setCardioRunning(false); setCardioElapsed(0);
+
+    // Reset plank state
+    setPlankSets(3); setPlankSetDuration(60);
+    setPlankCurrentSet(1); setPlankCountdown(60);
+    setPlankRunning(false); setPlankDone(false);
+    setPlankResting(false); setPlankRestCountdown(30);
+
+    setTab("active");
   };
+
+  const isCardio = (ex) => ex?.muscleGroup === "Cardio";
+  const isPlank = (ex) => ex?.name === "Plank";
 
   const completeSet = () => {
     const newDone = { ...completedSets, [currentSet]:true };
@@ -389,6 +525,65 @@ export default function LIV() {
         time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
       }]}));
       setActiveExercise(null); setIsResting(false); setTab("exercises");
+    }
+  };
+
+  // Save cardio session
+  const saveCardio = () => {
+    const mins = cardioRunning
+      ? Math.round(cardioElapsed / 60)
+      : parseInt(cardioMinutes) || 0;
+    if (mins === 0) return;
+    const cals = estimateCardioCalories(mins, cardioEffort);
+    const effortLabel = { easy:"Easy", medium:"Moderate", hard:"Hard" }[cardioEffort] || "Moderate";
+    const key = todayKey();
+    setWorkoutLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), {
+      name: activeExercise.name,
+      sets: 1,
+      reps: mins, // repurpose as minutes for cardio
+      isCardio: true,
+      duration: mins,
+      effort: effortLabel,
+      caloriesBurned: cals,
+      time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+    }]}));
+    setCardioRunning(false); clearInterval(cardioTimerRef.current);
+    setActiveExercise(null); setTab("exercises");
+  };
+
+  // Save plank session
+  const savePlank = () => {
+    const completedPlankSets = plankCurrentSet - 1 + (plankDone ? 1 : 0);
+    if (completedPlankSets === 0) { setActiveExercise(null); setTab("exercises"); return; }
+    const key = todayKey();
+    setWorkoutLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), {
+      name: "Plank",
+      sets: completedPlankSets,
+      reps: plankSetDuration, // seconds per set
+      isPlank: true,
+      holdSeconds: plankSetDuration,
+      time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+    }]}));
+    setPlankRunning(false); setPlankResting(false);
+    clearTimeout(plankTimerRef.current);
+    setActiveExercise(null); setTab("exercises");
+  };
+
+  const startPlankSet = () => {
+    setPlankCountdown(plankSetDuration);
+    setPlankDone(false);
+    setPlankRunning(true);
+    setPlankResting(false);
+  };
+
+  const nextPlankSet = () => {
+    if (plankCurrentSet < plankSets) {
+      setPlankCurrentSet(s => s + 1);
+      setPlankDone(false);
+      setPlankResting(true);
+      setPlankRestCountdown(30);
+    } else {
+      savePlank();
     }
   };
 
@@ -445,6 +640,12 @@ export default function LIV() {
     lbl:{ fontFamily:"Barlow,sans-serif", fontSize:11, color:"#666", letterSpacing:2, marginBottom:4, display:"block" },
   };
 
+  const fmtTime = (secs) => {
+    const m = Math.floor(secs/60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2,"0")}`;
+  };
+
   return (
     <div style={C.app}>
       <style>{`
@@ -455,10 +656,12 @@ export default function LIV() {
         input::placeholder{color:#444} select{appearance:none;background:#111;color:#fff}
         @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes scanline{0%{top:0%}100%{top:100%}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
         .sl{animation:su 0.3s ease forwards}
         .ec:hover{background:#161616!important;transform:translateX(3px);transition:all 0.2s}
         .fr:hover{background:#161616!important} .pr:active{transform:scale(0.93)}
         .scanline{position:absolute;left:0;right:0;height:2px;background:#ff4500;animation:scanline 1.5s linear infinite}
+        .pulse{animation:pulse 1s ease-in-out infinite}
         video{object-fit:cover;width:100%;display:block}
       `}</style>
 
@@ -485,7 +688,7 @@ export default function LIV() {
             <div style={{fontSize:13,letterSpacing:3,marginBottom:14,color:"#ff4500"}}>TODAY'S SUMMARY</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,textAlign:"center"}}>
               <div><div style={{fontSize:36}}>{todayWorkout.length}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555",letterSpacing:1}}>EXERCISES</div></div>
-              <div><div style={{fontSize:36}}>{todayWorkout.reduce((a,e)=>a+e.sets,0)}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555",letterSpacing:1}}>SETS</div></div>
+              <div><div style={{fontSize:36}}>{todayWorkout.reduce((a,e)=>a+(e.isCardio?1:e.sets),0)}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555",letterSpacing:1}}>SETS</div></div>
               <div><div style={{fontSize:36,color:totals.calories>DAILY_TARGETS.calories?"#ff4500":"#fff"}}>{totals.calories}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555",letterSpacing:1}}>CALORIES</div></div>
             </div>
           </div>
@@ -500,56 +703,234 @@ export default function LIV() {
         </div>
       )}
 
+      {/* ─── ACTIVE EXERCISE TAB ─── */}
       {tab==="active"&&activeExercise&&(
         <div style={C.sec} className="sl">
           <div style={C.acard}>
             <div style={{fontSize:10,letterSpacing:3,color:"#ff4500",fontFamily:"Barlow,sans-serif",marginBottom:8}}>NOW PERFORMING</div>
             <div style={{fontSize:28,letterSpacing:2,lineHeight:1.1,marginBottom:4}}>{activeExercise.name}</div>
             <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#666",marginBottom:18}}>{activeExercise.muscleGroup} · {activeExercise.type}</div>
-            <div style={{display:"flex",gap:6,marginBottom:20}}>
-              {Array.from({length:activeExercise.defaultSets}).map((_,i)=>(
-                <div key={i} style={{flex:1,height:6,borderRadius:3,transition:"background 0.3s",background:completedSets[i+1]?"#ff4500":i+1===currentSet?"#ff8c00":"#222"}}/>
-              ))}
-            </div>
-            {isResting?(
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:12,color:"#ff4500",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:10}}>REST TIME</div>
-                <div style={{position:"relative",display:"inline-block",marginBottom:10}}>
-                  <svg width="120" height="120" style={{transform:"rotate(-90deg)"}}>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#222" strokeWidth="8"/>
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="#ff4500" strokeWidth="8" strokeDasharray="283" strokeDashoffset={283-(283*restCountdown/restTime)} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s linear"}}/>
-                  </svg>
-                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38}}>{restCountdown}s</div>
-                </div>
-                <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#555",marginBottom:14}}>Set {currentSet} of {activeExercise.defaultSets} up next</div>
-                <button onClick={()=>setIsResting(false)} style={{...C.sBtn,background:"#222",color:"#888"}}>SKIP REST</button>
-              </div>
-            ):(
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:12,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif"}}>SET {currentSet} / {activeExercise.defaultSets}</div>
-                <div style={{fontSize:76,color:"#ff4500",lineHeight:1,margin:"6px 0"}}>{repsLeft}</div>
-                <div style={{fontSize:11,color:"#555",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:16}}>REPS</div>
-                <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:20}}>
-                  {[{l:"−",a:()=>setRepsLeft(r=>Math.max(0,r-1))},{l:"RST",a:()=>setRepsLeft(activeExercise.defaultReps),sm:true},{l:"+",a:()=>setRepsLeft(r=>r+1)}].map((b,i)=>(
-                    <button key={i} onClick={b.a} className="pr" style={{width:50,height:50,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:b.sm?"#666":"#fff",fontSize:b.sm?10:22,cursor:"pointer",fontFamily:b.sm?"Bebas Neue,sans-serif":"Barlow,sans-serif",fontWeight:700,letterSpacing:1}}>{b.l}</button>
+
+            {/* ── CARDIO MODE ── */}
+            {isCardio(activeExercise) && (
+              <div>
+                {/* Effort selector */}
+                <div style={{fontSize:11,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:10}}>EFFORT LEVEL</div>
+                <div style={{display:"flex",gap:8,marginBottom:20}}>
+                  {[{id:"easy",l:"EASY 😤",c:"#00d4ff"},{id:"medium",l:"MODERATE 🔥",c:"#ff8c00"},{id:"hard",l:"HARD 💀",c:"#ff4500"}].map(e=>(
+                    <button key={e.id} onClick={()=>setCardioEffort(e.id)} className="pr" style={{flex:1,padding:"10px 6px",borderRadius:10,border:`2px solid ${cardioEffort===e.id?e.c:"#2a2a2a"}`,background:cardioEffort===e.id?"#1a0800":"#111",color:cardioEffort===e.id?e.c:"#555",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:11,letterSpacing:1}}>
+                      {e.l}
+                    </button>
                   ))}
                 </div>
-                <button onClick={completeSet} className="pr" style={C.btn()}>{currentSet<activeExercise.defaultSets?"✓ SET DONE — REST":"✓ FINISH EXERCISE"}</button>
+
+                {/* Timer display */}
+                <div style={{textAlign:"center",marginBottom:20}}>
+                  {cardioRunning ? (
+                    <>
+                      <div style={{fontSize:10,color:"#ff4500",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:8}} className="pulse">● RECORDING</div>
+                      <div style={{fontSize:72,color:"#ff4500",lineHeight:1,fontFamily:"Bebas Neue,sans-serif",letterSpacing:4}}>{fmtTime(cardioElapsed)}</div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginTop:4}}>
+                        Est. {estimateCardioCalories(Math.max(1, Math.round(cardioElapsed/60)), cardioEffort)} cal burned
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{fontSize:11,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:12}}>OR ENTER DURATION</div>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:8}}>
+                        <button onClick={()=>setCardioMinutes(m=>String(Math.max(1,parseInt(m||0)-5)))} className="pr" style={{width:44,height:44,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:20,cursor:"pointer",fontFamily:"Barlow,sans-serif",fontWeight:700}}>−</button>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:64,color:"#fff",lineHeight:1}}>{cardioMinutes}</div>
+                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555"}}>minutes</div>
+                        </div>
+                        <button onClick={()=>setCardioMinutes(m=>String(parseInt(m||0)+5))} className="pr" style={{width:44,height:44,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:20,cursor:"pointer",fontFamily:"Barlow,sans-serif",fontWeight:700}}>+</button>
+                      </div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#ff8c00",marginBottom:4}}>
+                        ≈ {estimateCardioCalories(parseInt(cardioMinutes)||0, cardioEffort)} cal estimated
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Controls */}
+                {!cardioRunning ? (
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <button onClick={()=>{setCardioElapsed(0);setCardioRunning(true);}} className="pr" style={{...C.btn("ghost"),flex:1,border:"1px solid #ff8c00",color:"#ff8c00",fontSize:14}}>⏱ START TIMER</button>
+                    <button onClick={saveCardio} className="pr" style={{...C.btn(),flex:1,fontSize:14}}>✓ LOG IT</button>
+                  </div>
+                ) : (
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <button onClick={()=>setCardioRunning(false)} className="pr" style={{...C.btn("ghost"),flex:1,border:"1px solid #888",color:"#888",fontSize:14}}>⏸ PAUSE</button>
+                    <button onClick={saveCardio} className="pr" style={{...C.btn(),flex:1,fontSize:14}}>✓ FINISH & SAVE</button>
+                  </div>
+                )}
+                {cardioRunning && (
+                  <button onClick={()=>{setCardioRunning(false);setCardioElapsed(0);}} style={{...C.btn("ghost"),fontSize:13,color:"#444"}}>RESET TIMER</button>
+                )}
               </div>
             )}
+
+            {/* ── PLANK MODE ── */}
+            {isPlank(activeExercise) && !isCardio(activeExercise) && (
+              <div>
+                {/* Config (only show before starting) */}
+                {!plankRunning && plankCurrentSet === 1 && !plankDone && !plankResting && (
+                  <>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+                      <div>
+                        <div style={{fontSize:10,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:8,textAlign:"center"}}>SETS</div>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                          <button onClick={()=>setPlankSets(s=>Math.max(1,s-1))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                          <div style={{fontSize:40,color:"#ff4500",minWidth:32,textAlign:"center"}}>{plankSets}</div>
+                          <button onClick={()=>setPlankSets(s=>s+1)} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{fontSize:10,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:8,textAlign:"center"}}>SECONDS/SET</div>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                          <button onClick={()=>setPlankSetDuration(d=>Math.max(10,d-15))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                          <div style={{fontSize:40,color:"#ff4500",minWidth:48,textAlign:"center"}}>{plankSetDuration}</div>
+                          <button onClick={()=>setPlankSetDuration(d=>d+15)} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",textAlign:"center",marginBottom:16}}>
+                      {plankSets} sets × {plankSetDuration}s = {Math.round(plankSets * plankSetDuration / 60 * 10)/10} min total
+                    </div>
+                  </>
+                )}
+
+                {/* Set progress dots */}
+                <div style={{display:"flex",gap:6,marginBottom:20}}>
+                  {Array.from({length:plankSets}).map((_,i)=>{
+                    const done = i+1 < plankCurrentSet || (i+1 === plankCurrentSet && plankDone);
+                    const active = i+1 === plankCurrentSet && !plankDone;
+                    return <div key={i} style={{flex:1,height:6,borderRadius:3,background:done?"#ff4500":active?"#ff8c00":"#222",transition:"background 0.3s"}}/>;
+                  })}
+                </div>
+
+                {/* Plank timer circle */}
+                <div style={{textAlign:"center",marginBottom:20}}>
+                  <div style={{fontSize:10,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:8}}>
+                    {plankResting ? "REST" : `SET ${plankCurrentSet} OF ${plankSets}`}
+                  </div>
+                  <div style={{position:"relative",display:"inline-block"}}>
+                    <svg width="140" height="140" style={{transform:"rotate(-90deg)"}}>
+                      <circle cx="70" cy="70" r="55" fill="none" stroke="#222" strokeWidth="8"/>
+                      {plankResting ? (
+                        <circle cx="70" cy="70" r="55" fill="none" stroke="#00d4ff" strokeWidth="8" strokeDasharray="346" strokeDashoffset={346-(346*plankRestCountdown/30)} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s linear"}}/>
+                      ) : (
+                        <circle cx="70" cy="70" r="55" fill="none" stroke={plankDone?"#00d4ff":"#ff4500"} strokeWidth="8" strokeDasharray="346" strokeDashoffset={plankDone?0:346-(346*(plankSetDuration-plankCountdown)/plankSetDuration)} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s linear"}}/>
+                      )}
+                    </svg>
+                    <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                      {plankResting ? (
+                        <>
+                          <div style={{fontSize:36,color:"#00d4ff"}}>{plankRestCountdown}s</div>
+                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>rest</div>
+                        </>
+                      ) : plankDone ? (
+                        <>
+                          <div style={{fontSize:36,color:"#00d4ff"}}>✓</div>
+                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#00d4ff"}}>DONE!</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{fontSize:42,color:"#ff4500"}}>{plankCountdown}s</div>
+                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>hold</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Plank controls */}
+                {plankResting ? (
+                  <button onClick={()=>{setPlankResting(false);startPlankSet();}} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff8c00",color:"#ff8c00",marginBottom:8,fontSize:14}}>SKIP REST → START SET {plankCurrentSet}</button>
+                ) : plankDone ? (
+                  <button onClick={nextPlankSet} className="pr" style={{...C.btn(),marginBottom:8,fontSize:16}}>
+                    {plankCurrentSet < plankSets ? `→ NEXT SET (${plankCurrentSet+1}/${plankSets})` : "✓ ALL SETS DONE — SAVE"}
+                  </button>
+                ) : plankRunning ? (
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <button onClick={()=>setPlankRunning(false)} className="pr" style={{...C.btn("ghost"),flex:1,border:"1px solid #888",color:"#888",fontSize:14}}>⏸ PAUSE</button>
+                    <button onClick={()=>{setPlankDone(true);setPlankRunning(false);}} className="pr" style={{...C.btn(),flex:1,fontSize:14}}>✓ DONE</button>
+                  </div>
+                ) : (
+                  <button onClick={startPlankSet} className="pr" style={{...C.btn(),marginBottom:8,fontSize:16}}>
+                    {plankCurrentSet === 1 && plankCountdown === plankSetDuration ? "▶ START SET 1" : "▶ RESUME"}
+                  </button>
+                )}
+
+                <button onClick={savePlank} style={{...C.btn("ghost"),fontSize:13,color:"#444",marginBottom:8}}>
+                  SAVE & EXIT ({plankCurrentSet - 1 + (plankDone ? 1 : 0)}/{plankSets} SETS)
+                </button>
+              </div>
+            )}
+
+            {/* ── REGULAR STRENGTH MODE ── */}
+            {!isCardio(activeExercise) && !isPlank(activeExercise) && (
+              <>
+                <div style={{display:"flex",gap:6,marginBottom:20}}>
+                  {Array.from({length:activeExercise.defaultSets}).map((_,i)=>(
+                    <div key={i} style={{flex:1,height:6,borderRadius:3,transition:"background 0.3s",background:completedSets[i+1]?"#ff4500":i+1===currentSet?"#ff8c00":"#222"}}/>
+                  ))}
+                </div>
+                {isResting?(
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:12,color:"#ff4500",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:10}}>REST TIME</div>
+                    <div style={{position:"relative",display:"inline-block",marginBottom:10}}>
+                      <svg width="120" height="120" style={{transform:"rotate(-90deg)"}}>
+                        <circle cx="60" cy="60" r="45" fill="none" stroke="#222" strokeWidth="8"/>
+                        <circle cx="60" cy="60" r="45" fill="none" stroke="#ff4500" strokeWidth="8" strokeDasharray="283" strokeDashoffset={283-(283*restCountdown/restTime)} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s linear"}}/>
+                      </svg>
+                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38}}>{restCountdown}s</div>
+                    </div>
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#555",marginBottom:14}}>Set {currentSet} of {activeExercise.defaultSets} up next</div>
+                    <button onClick={()=>setIsResting(false)} style={{...C.sBtn,background:"#222",color:"#888"}}>SKIP REST</button>
+                  </div>
+                ):(
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:12,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif"}}>SET {currentSet} / {activeExercise.defaultSets}</div>
+                    <div style={{fontSize:76,color:"#ff4500",lineHeight:1,margin:"6px 0"}}>{repsLeft}</div>
+                    <div style={{fontSize:11,color:"#555",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:16}}>REPS</div>
+                    <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:20}}>
+                      {[{l:"−",a:()=>setRepsLeft(r=>Math.max(0,r-1))},{l:"RST",a:()=>setRepsLeft(activeExercise.defaultReps),sm:true},{l:"+",a:()=>setRepsLeft(r=>r+1)}].map((b,i)=>(
+                        <button key={i} onClick={b.a} className="pr" style={{width:50,height:50,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:b.sm?"#666":"#fff",fontSize:b.sm?10:22,cursor:"pointer",fontFamily:b.sm?"Bebas Neue,sans-serif":"Barlow,sans-serif",fontWeight:700,letterSpacing:1}}>{b.l}</button>
+                      ))}
+                    </div>
+                    <button onClick={completeSet} className="pr" style={C.btn()}>{currentSet<activeExercise.defaultSets?"✓ SET DONE — REST":"✓ FINISH EXERCISE"}</button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          <button onClick={finishEarly} className="pr" style={{...C.btn("ghost"),color:"#ff8c00",border:"1px solid #ff8c00",marginBottom:8}}>
-            ✓ FINISH & SAVE ({Object.keys(completedSets).length} SET{Object.keys(completedSets).length!==1?"S":""} COMPLETED)
-          </button>
-          <button onClick={()=>{setActiveExercise(null);setIsResting(false);setCompletedSets({});setCurrentSet(1);setTab("exercises");}} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
-          <div style={{...C.card,marginTop:12}}>
-            <div style={C.lbl}>REST BETWEEN SETS</div>
-            <div style={{display:"flex",gap:8}}>
-              {[30,60,90,120].map(s=>(
-                <button key={s} onClick={()=>setRestTime(s)} className="pr" style={{...C.sBtn,flex:1,background:restTime===s?"#ff4500":"#1a1a1a",color:restTime===s?"#fff":"#666"}}>{s}s</button>
-              ))}
+
+          {/* Only show finish early for strength exercises */}
+          {!isCardio(activeExercise) && !isPlank(activeExercise) && (
+            <button onClick={finishEarly} className="pr" style={{...C.btn("ghost"),color:"#ff8c00",border:"1px solid #ff8c00",marginBottom:8}}>
+              ✓ FINISH & SAVE ({Object.keys(completedSets).length} SET{Object.keys(completedSets).length!==1?"S":""} COMPLETED)
+            </button>
+          )}
+
+          <button onClick={()=>{
+            setActiveExercise(null);setIsResting(false);setCompletedSets({});setCurrentSet(1);
+            setCardioRunning(false);clearInterval(cardioTimerRef.current);
+            setPlankRunning(false);clearTimeout(plankTimerRef.current);
+            setTab("exercises");
+          }} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
+
+          {/* Rest timer only for strength */}
+          {!isCardio(activeExercise) && !isPlank(activeExercise) && (
+            <div style={{...C.card,marginTop:12}}>
+              <div style={C.lbl}>REST BETWEEN SETS</div>
+              <div style={{display:"flex",gap:8}}>
+                {[30,60,90,120].map(s=>(
+                  <button key={s} onClick={()=>setRestTime(s)} className="pr" style={{...C.sBtn,flex:1,background:restTime===s?"#ff4500":"#1a1a1a",color:restTime===s?"#fff":"#666"}}>{s}s</button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -590,8 +971,14 @@ export default function LIV() {
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
                       <span style={{fontSize:18,letterSpacing:1}}>{ex.name}</span>
                       {ex.custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 6px",borderRadius:4,fontFamily:"Barlow,sans-serif"}}>CUSTOM</span>}
+                      {isCardio(ex)&&<span style={{background:"#1a4a1a",color:"#00d4ff",fontSize:8,padding:"2px 6px",borderRadius:4,fontFamily:"Barlow,sans-serif"}}>CARDIO</span>}
+                      {isPlank(ex)&&<span style={{background:"#1a1a4a",color:"#ff8c00",fontSize:8,padding:"2px 6px",borderRadius:4,fontFamily:"Barlow,sans-serif"}}>TIMED</span>}
                     </div>
-                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:3}}>{ex.muscleGroup} · {ex.equipment} · {ex.difficulty}</div>
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:3}}>
+                      {ex.muscleGroup} · {ex.equipment} · {ex.difficulty}
+                      {isCardio(ex) && " · Time + Effort"}
+                      {isPlank(ex) && " · Sets + Timer"}
+                    </div>
                   </div>
                   <div style={{display:"flex",gap:6,alignItems:"center"}}>
                     {ex.alternatives?.length>0&&(<button onClick={e=>{e.stopPropagation();setShowAltFor(showAltFor===i?null:i);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",padding:"4px 8px",borderRadius:6,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:10,letterSpacing:1}}>ALT</button>)}
@@ -618,9 +1005,34 @@ export default function LIV() {
             <div style={{textAlign:"center",padding:"50px 20px"}}><div style={{fontSize:48,marginBottom:12}}>💪</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>No exercises yet. Head to EXERCISES to get started.</div></div>
           ):(
             <>
-              {todayWorkout.map((ex,i)=>(<div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:"3px solid #ff4500"}}><div><div style={{fontSize:18,letterSpacing:1}}>{ex.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.reps} reps</div></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div><button onClick={()=>removeWorkout(i)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button></div></div>))}
+              {todayWorkout.map((ex,i)=>(
+                <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`}}>
+                  <div>
+                    <div style={{fontSize:18,letterSpacing:1}}>{ex.name}</div>
+                    {ex.isCardio ? (
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
+                        {ex.duration} min · {ex.effort} · ~{ex.caloriesBurned} cal burned
+                      </div>
+                    ) : ex.isPlank ? (
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
+                        {ex.sets} sets × {ex.holdSeconds}s hold
+                      </div>
+                    ) : (
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.reps} reps</div>
+                    )}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
+                    <button onClick={()=>removeWorkout(i)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
+                  </div>
+                </div>
+              ))}
               <div style={{...C.acard,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",textAlign:"center",gap:8}}>
-                {[{l:"EXERCISES",v:todayWorkout.length},{l:"TOTAL SETS",v:todayWorkout.reduce((a,e)=>a+e.sets,0)},{l:"TOTAL REPS",v:todayWorkout.reduce((a,e)=>a+(e.sets*e.reps),0)}].map((s,i)=>(<div key={i}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>{s.l}</div><div style={{fontSize:34}}>{s.v}</div></div>))}
+                {[
+                  {l:"EXERCISES",v:todayWorkout.length},
+                  {l:"TOTAL SETS",v:todayWorkout.reduce((a,e)=>a+(e.isCardio?1:e.sets),0)},
+                  {l:"CAL BURNED",v:todayWorkout.reduce((a,e)=>a+(e.caloriesBurned||0),0)||"—"},
+                ].map((s,i)=>(<div key={i}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>{s.l}</div><div style={{fontSize:34}}>{s.v}</div></div>))}
               </div>
             </>
           )}
@@ -641,120 +1053,154 @@ export default function LIV() {
           </div>
           <button onClick={()=>setShowFoodModal(true)} className="pr" style={{...C.btn(),marginBottom:16}}>+ LOG FOOD</button>
           {todayFood.length===0?(<div style={{textAlign:"center",padding:"40px 20px"}}><div style={{fontSize:40,marginBottom:8}}>🥗</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>No food logged yet.</div></div>):todayFood.map(food=>(<div key={food.id} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div><button onClick={()=>removeFood(food.id)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button></div></div>))}
-
-
         </div>
       )}
 
-      {/* FOOD MODALS - global, work from any tab */}
-        {showFoodModal&&(
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
-              <div>
-                <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
-                {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
-              </div>
-              <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+      {/* ─── FOOD MODALS ─── */}
+      {showFoodModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
+            <div>
+              <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
+              {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
             </div>
-            <div style={{marginBottom:12}}/>
-            <div style={{...C.card,marginBottom:12,flexShrink:0}}>
-              <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
-              {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
-              {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
-              {scanState==="loading"&&(<div style={{textAlign:"center",padding:20,fontFamily:"Barlow,sans-serif",color:"#666"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div>Looking up product...</div>)}
-              {scanState==="result"&&scanResult&&(<><div style={{background:"#0d1a0d",border:"1px solid #1a3a1a",borderRadius:10,padding:14,marginBottom:12}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{scanResult.name}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center"}}>{[{l:"CALS",v:scanResult.calories,c:"#ff4500"},{l:"PROTEIN",v:`${scanResult.protein}g`,c:"#00d4ff"},{l:"CARBS",v:`${scanResult.carbs}g`,c:"#ffcc00"},{l:"FAT",v:`${scanResult.fat}g`,c:"#ff69b4"}].map((m,i)=>(<div key={i}><div style={{fontSize:16,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>))}</div></div><button onClick={()=>addFood(scanResult)} className="pr" style={{...C.btn(),fontSize:14,marginBottom:8}}>✓ ADD THIS FOOD</button><button onClick={()=>{setScanState("idle");setManualBarcode("");setScanResult(null);}} style={{...C.btn("ghost"),fontSize:13}}>SCAN ANOTHER</button></>)}
-              {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
-            </div>
-            <div style={{...C.lbl,flexShrink:0}}>SEARCH FOOD DATABASE</div>
-            <input style={{...C.inp,flexShrink:0}} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
-            <div style={{paddingBottom:40}}>
-              {[...customFoods.map(f=>({...f,_custom:true})), ...PRESET_FOODS].filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase())).map((food,i)=>(<div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>{food._custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1}}>MY FOOD</span>}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div></div>))}
-            </div>
+            <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
           </div>
-        )}
-
-        {/* SERVING SIZE MODAL */}
-        {servingFood&&(
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <div style={{fontSize:20,letterSpacing:2}}>SERVING SIZE</div>
-              <button onClick={()=>setServingFood(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-            </div>
-            <div style={{...C.card,marginBottom:16}}>
-              <div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:4}}>{servingFood.name}</div>
-              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>Per 100g: {servingFood.calories} cal · P:{servingFood.protein}g · C:{servingFood.carbs}g · F:{servingFood.fat}g</div>
-            </div>
-            <div style={C.lbl}>AMOUNT</div>
-            <input style={C.inp} type="number" placeholder="e.g. 73" value={servingQty} onChange={e=>setServingQty(e.target.value)}/>
-            <div style={C.lbl}>UNIT</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
-              {["g","oz","lbs","kg","ml","cups","tbsp","tsp","piece"].map(u=>(
-                <button key={u} onClick={()=>setServingUnit(u)} className="pr" style={{padding:"8px 14px",borderRadius:20,border:`1px solid ${servingUnit===u?"#ff4500":"#2a2a2a"}`,background:servingUnit===u?"#ff4500":"#1a1a1a",color:servingUnit===u?"#fff":"#666",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>{u}</button>
-              ))}
-            </div>
-            {(()=>{
-              const qty=parseFloat(servingQty)||0;
-              const base=servingFood.servingSize||100;
-              const gramsMap={g:1,oz:28.35,lbs:453.59,kg:1000,ml:1,cups:240,tbsp:15,tsp:5,piece:base};
-              const grams=qty*(gramsMap[servingUnit]||1);
-              const scale=servingUnit==="piece"?qty:grams/base;
-              const p={cal:Math.round(servingFood.calories*scale),pro:Math.round(servingFood.protein*scale),carb:Math.round(servingFood.carbs*scale),fat:Math.round(servingFood.fat*scale)};
-              return(
-                <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginBottom:20}}>
-                  {[{l:"CALS",v:p.cal,c:"#ff4500"},{l:"PROTEIN",v:`${p.pro}g`,c:"#00d4ff"},{l:"CARBS",v:`${p.carb}g`,c:"#ffcc00"},{l:"FAT",v:`${p.fat}g`,c:"#ff69b4"}].map((m,i)=>(
-                    <div key={i}><div style={{fontSize:20,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
-                  ))}
+          <div style={{marginBottom:12}}/>
+          <div style={{...C.card,marginBottom:12,flexShrink:0}}>
+            <div style={{fontSize:14,letterSpacing:2,color:"#ff4500",marginBottom:12}}>📷 BARCODE SCANNER</div>
+            {scanState==="idle"&&(<><button onClick={startScanner} className="pr" style={{...C.btn(),fontSize:14,marginBottom:10}}>📷 AUTO-SCAN BARCODE</button><div style={{display:"flex",gap:8}}><input style={{...C.inp,margin:0,flex:1}} placeholder="Or type barcode number..." value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualBarcode&&fetchBarcode(manualBarcode)}/><button onClick={()=>manualBarcode&&fetchBarcode(manualBarcode)} className="pr" style={{...C.sBtn,background:"#ff4500",color:"#fff",whiteSpace:"nowrap"}}>SEARCH</button></div></>)}
+            {scanState==="scanning"&&(<><div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:10,background:"#000",height:220}}><video ref={videoRef} autoPlay playsInline muted style={{height:220}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:"75%",height:80,border:"2px solid #ff4500",borderRadius:6,position:"relative",overflow:"hidden"}}><div className="scanline"/></div></div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,color:"#888",textAlign:"center",marginBottom:10}}>{scanHint}</div><button onClick={()=>{stopScanner();setScanState("idle");}} style={{...C.btn("ghost"),fontSize:13}}>CANCEL</button></>)}
+            {scanState==="loading"&&(<div style={{textAlign:"center",padding:20,fontFamily:"Barlow,sans-serif",color:"#666"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div>Looking up product...</div>)}
+            {scanState==="result"&&scanResult&&(
+              <>
+                <div style={{background:"#0d1a0d",border:"1px solid #1a3a1a",borderRadius:10,padding:14,marginBottom:12}}>
+                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:4}}>{scanResult.name}</div>
+                  {scanResult._actualServingLabel && (
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginBottom:8}}>
+                      Serving: {scanResult._actualServingLabel}
+                      {scanResult._actualServingCalories ? ` · ${scanResult._actualServingCalories} cal` : ""}
+                      {scanResult._actualServingProtein ? ` · ${scanResult._actualServingProtein}g protein` : ""}
+                    </div>
+                  )}
+                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555",marginBottom:8}}>Per 100g base values:</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center"}}>
+                    {[{l:"CALS",v:scanResult.calories,c:"#ff4500"},{l:"PROTEIN",v:`${scanResult.protein}g`,c:"#00d4ff"},{l:"CARBS",v:`${scanResult.carbs}g`,c:"#ffcc00"},{l:"FAT",v:`${scanResult.fat}g`,c:"#ff69b4"}].map((m,i)=>(<div key={i}><div style={{fontSize:16,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>))}
+                  </div>
                 </div>
-              );
-            })()}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>confirmServing(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button><button onClick={()=>confirmServing(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button></div>
+                <button onClick={()=>addFood(scanResult)} className="pr" style={{...C.btn(),fontSize:14,marginBottom:8}}>✓ ADD THIS FOOD</button>
+                <button onClick={()=>{setScanState("idle");setManualBarcode("");setScanResult(null);}} style={{...C.btn("ghost"),fontSize:13}}>SCAN ANOTHER</button>
+              </>
+            )}
+            {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
           </div>
-        )}
-
-        {/* MANUAL MACRO ENTRY (scanner fallback) */}
-        {showManualEntry&&(
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div style={{fontSize:20,letterSpacing:2}}>ENTER MACROS</div>
-              <button onClick={()=>setShowManualEntry(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-            </div>
-            <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Product found but macros were missing. Enter them manually.</div>
-            <div style={C.lbl}>PRODUCT NAME</div>
-            <input style={C.inp} value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.calories} onChange={e=>setManualMacros(p=>({...p,calories:e.target.value}))}/></div>
-              <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.protein} onChange={e=>setManualMacros(p=>({...p,protein:e.target.value}))}/></div>
-              <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.carbs} onChange={e=>setManualMacros(p=>({...p,carbs:e.target.value}))}/></div>
-              <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.fat} onChange={e=>setManualMacros(p=>({...p,fat:e.target.value}))}/></div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}><button onClick={()=>addManualFood(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button><button onClick={()=>addManualFood(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button></div>
+          <div style={{...C.lbl,flexShrink:0}}>SEARCH FOOD DATABASE</div>
+          <input style={{...C.inp,flexShrink:0}} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
+          <div style={{paddingBottom:40}}>
+            {[...customFoods.map(f=>({...f,_custom:true})), ...PRESET_FOODS].filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase())).map((food,i)=>(<div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>{food._custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1}}>MY FOOD</span>}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div></div>))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* EDIT MACRO GOALS MODAL */}
-        {showGoalsModal&&(
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div style={{fontSize:20,letterSpacing:2}}>DAILY GOALS</div>
-              <button onClick={()=>setShowGoalsModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
-            </div>
-            <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Set your daily macro targets. These update your progress rings.</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:parseInt(e.target.value)||0}))}/></div>
-              <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:parseInt(e.target.value)||0}))}/></div>
-              <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:parseInt(e.target.value)||0}))}/></div>
-              <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:parseInt(e.target.value)||0}))}/></div>
-            </div>
-            <button onClick={()=>{setMacroGoals({...goalsForm});setShowGoalsModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
+      {/* SERVING SIZE MODAL */}
+      {servingFood&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div style={{fontSize:20,letterSpacing:2}}>SERVING SIZE</div>
+            <button onClick={()=>setServingFood(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
           </div>
-        )}
+          <div style={{...C.card,marginBottom:16}}>
+            <div style={{fontFamily:"Barlow,sans-serif",fontSize:15,fontWeight:700,color:"#fff",marginBottom:4}}>{servingFood.name}</div>
+            <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>
+              Base (per 100g): {servingFood.calories} cal · P:{servingFood.protein}g · C:{servingFood.carbs}g · F:{servingFood.fat}g
+            </div>
+            {servingFood.servingSize && servingFood.servingSize !== 100 && (
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:4}}>
+                Product serving: {servingFood.servingSize}{servingFood.servingUnit || "g"} (pre-filled below)
+              </div>
+            )}
+          </div>
+          <div style={C.lbl}>AMOUNT</div>
+          <input style={C.inp} type="number" placeholder="e.g. 414" value={servingQty} onChange={e=>setServingQty(e.target.value)}/>
+          <div style={C.lbl}>UNIT</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
+            {["g","oz","lbs","kg","ml","cups","tbsp","tsp","piece"].map(u=>(
+              <button key={u} onClick={()=>setServingUnit(u)} className="pr" style={{padding:"8px 14px",borderRadius:20,border:`1px solid ${servingUnit===u?"#ff4500":"#2a2a2a"}`,background:servingUnit===u?"#ff4500":"#1a1a1a",color:servingUnit===u?"#fff":"#666",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>{u}</button>
+            ))}
+          </div>
+          {(()=>{
+            const qty=parseFloat(servingQty)||0;
+            const unit=servingUnit;
+            const gramsMap={g:1,oz:28.35,lbs:453.59,kg:1000,ml:1,cups:240,tbsp:15,tsp:5};
+            let scale;
+            if (unit==="piece") {
+              const baseGrams=(servingFood.servingSize||100)*(gramsMap[servingFood.servingUnit||"g"]||1);
+              scale=qty*baseGrams/100;
+            } else {
+              const inputGrams=qty*(gramsMap[unit]||1);
+              scale=inputGrams/100;
+            }
+            const p={cal:Math.round(servingFood.calories*scale),pro:Math.round(servingFood.protein*scale),carb:Math.round(servingFood.carbs*scale),fat:Math.round(servingFood.fat*scale)};
+            return(
+              <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginBottom:20}}>
+                {[{l:"CALS",v:p.cal,c:"#ff4500"},{l:"PROTEIN",v:`${p.pro}g`,c:"#00d4ff"},{l:"CARBS",v:`${p.carb}g`,c:"#ffcc00"},{l:"FAT",v:`${p.fat}g`,c:"#ff69b4"}].map((m,i)=>(
+                  <div key={i}><div style={{fontSize:20,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
+                ))}
+              </div>
+            );
+          })()}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <button onClick={()=>confirmServing(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button>
+            <button onClick={()=>confirmServing(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button>
+          </div>
+        </div>
+      )}
 
+      {/* MANUAL MACRO ENTRY */}
+      {showManualEntry&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:20,letterSpacing:2}}>ENTER MACROS</div>
+            <button onClick={()=>setShowManualEntry(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+          </div>
+          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Product found but macros were missing. Enter them manually.</div>
+          <div style={C.lbl}>PRODUCT NAME</div>
+          <input style={C.inp} value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.calories} onChange={e=>setManualMacros(p=>({...p,calories:e.target.value}))}/></div>
+            <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.protein} onChange={e=>setManualMacros(p=>({...p,protein:e.target.value}))}/></div>
+            <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.carbs} onChange={e=>setManualMacros(p=>({...p,carbs:e.target.value}))}/></div>
+            <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.fat} onChange={e=>setManualMacros(p=>({...p,fat:e.target.value}))}/></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+            <button onClick={()=>addManualFood(false)} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff4500",color:"#ff4500",fontSize:13}}>✓ ADD ONCE</button>
+            <button onClick={()=>addManualFood(true)} className="pr" style={{...C.btn(),fontSize:13}}>★ SAVE TO MY FOODS</button>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MACRO GOALS MODAL */}
+      {showGoalsModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:20,letterSpacing:2}}>DAILY GOALS</div>
+            <button onClick={()=>setShowGoalsModal(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+          </div>
+          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Set your daily macro targets.</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:parseInt(e.target.value)||0}))}/></div>
+            <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:parseInt(e.target.value)||0}))}/></div>
+            <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:parseInt(e.target.value)||0}))}/></div>
+            <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:parseInt(e.target.value)||0}))}/></div>
+          </div>
+          <button onClick={()=>{setMacroGoals({...goalsForm});setShowGoalsModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
+        </div>
+      )}
 
       {tab==="weight"&&(()=>{
         const wg = weightGoal;
         const activityMultipliers = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryActive:1.9 };
         const tdee = Math.round(wg.bmr * (activityMultipliers[wg.activityLevel]||1.55));
-        // Medical/research guidelines: safe deficit 500-1000 cal/day = 0.5-1 lb/week
         const deficit500 = tdee - 500;
         const deficit750 = tdee - 750;
         const deficit1000 = tdee - 1000;
@@ -768,7 +1214,6 @@ export default function LIV() {
         const totalLost = Math.max(0, startWeight - latestWeight).toFixed(1);
         const toGo = Math.max(0, latestWeight - wg.goal).toFixed(1);
         const pctDone = lbsToLose > 0 ? Math.min(100, Math.round(((wg.current - latestWeight) / lbsToLose) * 100)) : 0;
-        // 7-day rolling average
         const last7 = weightLog.slice(-7);
         const avg7 = last7.length > 0 ? (last7.reduce((s,e)=>s+e.weight,0)/last7.length).toFixed(1) : latestWeight;
         return(
@@ -780,32 +1225,20 @@ export default function LIV() {
               <button onClick={()=>{setWeightGoalForm({...wg});setShowWeightGoalModal(true);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:1}}>EDIT GOALS</button>
             </div>
           </div>
-
-          {/* Current stats */}
           <div style={C.acard}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",textAlign:"center",gap:8,marginBottom:16}}>
               <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>CURRENT</div><div style={{fontSize:32}}>{latestWeight}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
               <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>GOAL</div><div style={{fontSize:32}}>{wg.goal}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
               <div><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>TO GO</div><div style={{fontSize:32,color:"#ff8c00"}}>{toGo}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>{wg.unit}</div></div>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginBottom:6}}>
-              <span>PROGRESS</span><span style={{color:"#ff4500"}}>{pctDone}%</span>
-            </div>
-            <div style={{background:"#1a1a1a",borderRadius:20,height:10,overflow:"hidden",marginBottom:8}}>
-              <div style={{background:"linear-gradient(90deg,#ff4500,#ff8c00)",height:"100%",width:`${pctDone}%`,borderRadius:20,transition:"width 0.6s ease"}}/>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:10,color:"#333"}}>
-              <span>{wg.current} {wg.unit} start</span><span>{wg.goal} {wg.unit} goal</span>
-            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginBottom:6}}><span>PROGRESS</span><span style={{color:"#ff4500"}}>{pctDone}%</span></div>
+            <div style={{background:"#1a1a1a",borderRadius:20,height:10,overflow:"hidden",marginBottom:8}}><div style={{background:"linear-gradient(90deg,#ff4500,#ff8c00)",height:"100%",width:`${pctDone}%`,borderRadius:20,transition:"width 0.6s ease"}}/></div>
+            <div style={{display:"flex",justifyContent:"space-between",fontFamily:"Barlow,sans-serif",fontSize:10,color:"#333"}}><span>{wg.current} {wg.unit} start</span><span>{wg.goal} {wg.unit} goal</span></div>
           </div>
-
-          {/* Stats row */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
             <div style={C.card}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>TOTAL LOST</div><div style={{fontSize:28}}>{totalLost} <span style={{fontSize:14,color:"#555"}}>{wg.unit}</span></div></div>
             <div style={C.card}><div style={{fontSize:10,color:"#ff4500",letterSpacing:2,fontFamily:"Barlow,sans-serif",marginBottom:4}}>7-DAY AVG</div><div style={{fontSize:28}}>{avg7} <span style={{fontSize:14,color:"#555"}}>{wg.unit}</span></div></div>
           </div>
-
-          {/* Calorie deficit scenarios */}
           <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:10}}>DEFICIT SCENARIOS</div>
           <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444",marginBottom:12}}>Based on your TDEE of {tdee} cal/day (BMR {wg.bmr} × {wg.activityLevel} activity)</div>
           {[
@@ -815,14 +1248,8 @@ export default function LIV() {
           ].map((s,i)=>(
             <div key={i} style={{...C.card,borderLeft:`3px solid ${s.color}`,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                <div>
-                  <div style={{fontSize:16,letterSpacing:1,color:s.color}}>{s.label} — {s.rate}</div>
-                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{s.note}</div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>{s.cals} cal/day</div>
-                  <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>−{s.deficit} deficit</div>
-                </div>
+                <div><div style={{fontSize:16,letterSpacing:1,color:s.color}}>{s.label} — {s.rate}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{s.note}</div></div>
+                <div style={{textAlign:"right"}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>{s.cals} cal/day</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>−{s.deficit} deficit</div></div>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0e0e0e",borderRadius:8,padding:"8px 12px"}}>
                 <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555"}}>🎯 GOAL DATE</div>
@@ -830,8 +1257,6 @@ export default function LIV() {
               </div>
             </div>
           ))}
-
-          {/* Weight log history */}
           {weightLog.length > 0 && (<>
             <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:10,marginTop:8}}>WEIGHT HISTORY</div>
             {[...weightLog].reverse().slice(0,14).map((entry,i)=>(
@@ -844,8 +1269,6 @@ export default function LIV() {
               </div>
             ))}
           </>)}
-
-          {/* Log weight modal */}
           {showWeightModal&&(
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
@@ -864,8 +1287,6 @@ export default function LIV() {
               }} className="pr" style={C.btn()}>✓ SAVE WEIGHT</button>
             </div>
           )}
-
-          {/* Edit weight goals modal */}
           {showWeightGoalModal&&(
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -933,7 +1354,11 @@ export default function LIV() {
             </div>
           </div>
           <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:12}}>WORKOUT HISTORY</div>
-          {workoutDays.length===0?(<div style={{textAlign:"center",padding:"30px 20px",fontFamily:"Barlow,sans-serif",color:"#333"}}>No workouts logged yet. Get after it! 💪</div>):[...workoutDays].reverse().slice(0,10).map(ds=>(<div key={ds} onClick={()=>setSelectedDay(ds)} style={{...C.card,cursor:"pointer",borderLeft:"3px solid #ff4500"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{fontSize:16,letterSpacing:1}}>{new Date(ds+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase()}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff4500"}}>{workoutLog[ds].length} exercises</div></div>{workoutLog[ds].map((ex,i)=>(<div key={i} style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",padding:"3px 0",borderTop:i>0?"1px solid #1a1a1a":"none"}}>{ex.name} · {ex.sets}×{ex.reps}</div>))}</div>))}
+          {workoutDays.length===0?(<div style={{textAlign:"center",padding:"30px 20px",fontFamily:"Barlow,sans-serif",color:"#333"}}>No workouts logged yet. Get after it! 💪</div>):[...workoutDays].reverse().slice(0,10).map(ds=>(<div key={ds} onClick={()=>setSelectedDay(ds)} style={{...C.card,cursor:"pointer",borderLeft:"3px solid #ff4500"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{fontSize:16,letterSpacing:1}}>{new Date(ds+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase()}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff4500"}}>{workoutLog[ds].length} exercises</div></div>{workoutLog[ds].map((ex,i)=>(
+            <div key={i} style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",padding:"3px 0",borderTop:i>0?"1px solid #1a1a1a":"none"}}>
+              {ex.isCardio ? `${ex.name} · ${ex.duration}min · ${ex.effort}` : ex.isPlank ? `${ex.name} · ${ex.sets}×${ex.holdSeconds}s` : `${ex.name} · ${ex.sets}×${ex.reps}`}
+            </div>
+          ))}</div>))}
 
           {selectedDay&&(()=>{
             const dayWorkout=workoutLog[selectedDay]||[];
@@ -950,20 +1375,20 @@ export default function LIV() {
                   </div>
                   <button onClick={()=>setSelectedDay(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
                 </div>
-
                 {dayWorkout.length>0&&(<>
                   <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:12}}>💪 WORKOUT — {dayWorkout.length} EXERCISES</div>
                   {dayWorkout.map((ex,i)=>(
-                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:"3px solid #ff4500",marginBottom:8}}>
+                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`,marginBottom:8}}>
                       <div>
                         <div style={{fontSize:15,letterSpacing:1}}>{ex.name}</div>
-                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.reps} reps</div>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
+                          {ex.isCardio ? `${ex.duration} min · ${ex.effort} · ~${ex.caloriesBurned} cal` : ex.isPlank ? `${ex.sets} sets × ${ex.holdSeconds}s` : `${ex.sets} sets × ${ex.reps} reps`}
+                        </div>
                       </div>
                       <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
                     </div>
                   ))}
                 </>)}
-
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:dayWorkout.length>0?16:0,marginBottom:8}}>
                   <div style={{fontSize:13,letterSpacing:3,color:"#ff4500"}}>🥗 NUTRITION{dayFood.length>0?` — ${totalCals} CALS · ${totalProtein}G PROTEIN`:""}</div>
                   <button onClick={()=>{setBackfillDay(selectedDay);setShowFoodModal(true);}} style={{background:"#ff4500",border:"none",color:"#fff",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD FOOD</button>
@@ -981,10 +1406,7 @@ export default function LIV() {
                   </div>
                 ))}
                 {dayFood.length===0&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#444",padding:"8px 0 12px"}}>No food logged for this day.</div>}
-
-                {dayWorkout.length===0&&dayFood.length===0&&(
-                  <div style={{textAlign:"center",padding:"20px 20px 40px"}}><div style={{fontSize:48,marginBottom:12}}>📭</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>Nothing logged for this day.</div></div>
-                )}
+                {dayWorkout.length===0&&dayFood.length===0&&(<div style={{textAlign:"center",padding:"20px 20px 40px"}}><div style={{fontSize:48,marginBottom:12}}>📭</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>Nothing logged for this day.</div></div>)}
                 <div style={{paddingBottom:40}}/>
               </div>
             );
