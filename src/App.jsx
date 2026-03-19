@@ -249,6 +249,12 @@ export default function LIV() {
   const [manualBarcode, setManualBarcode] = useState("");
   const [scanHint, setScanHint] = useState("Point camera at barcode...");
 
+  // Edit modals
+  const [editFood, setEditFood] = useState(null); // { item, index, dateKey }
+  const [editFoodForm, setEditFoodForm] = useState({ name:"", calories:"", protein:"", carbs:"", fat:"" });
+  const [editWorkout, setEditWorkout] = useState(null); // { item, index, dateKey }
+  const [editWorkoutForm, setEditWorkoutForm] = useState({});
+
   // Cardio logging state
   const [cardioMinutes, setCardioMinutes] = useState("30");
   const [cardioEffort, setCardioEffort] = useState("medium");
@@ -486,9 +492,66 @@ export default function LIV() {
     setFoodLog(prev => ({ ...prev, [key]: (prev[key]||[]).filter(f => f.id !== id) }));
   };
 
-  const removeWorkout = (index) => {
-    const key = todayKey();
+  const removeWorkout = (index, dateKey=null) => {
+    const key = dateKey || todayKey();
     setWorkoutLog(prev => ({ ...prev, [key]: (prev[key]||[]).filter((_,i) => i !== index) }));
+  };
+
+  // ── EDIT FOOD ──
+  const openEditFood = (item, index, dateKey) => {
+    setEditFood({ item, index, dateKey });
+    setEditFoodForm({ name: item.name, calories: String(item.calories), protein: String(item.protein), carbs: String(item.carbs), fat: String(item.fat) });
+  };
+  const saveEditFood = () => {
+    if (!editFood) return;
+    const { index, dateKey } = editFood;
+    const updated = {
+      ...editFood.item,
+      name: editFoodForm.name,
+      calories: parseInt(editFoodForm.calories)||0,
+      protein: parseInt(editFoodForm.protein)||0,
+      carbs: parseInt(editFoodForm.carbs)||0,
+      fat: parseInt(editFoodForm.fat)||0,
+    };
+    setFoodLog(prev => {
+      const day = [...(prev[dateKey]||[])];
+      day[index] = updated;
+      return { ...prev, [dateKey]: day };
+    });
+    setEditFood(null);
+  };
+
+  // ── EDIT WORKOUT ──
+  const openEditWorkout = (item, index, dateKey) => {
+    setEditWorkout({ item, index, dateKey });
+    if (item.isCardio) {
+      setEditWorkoutForm({ duration: String(item.duration), effort: item.effort });
+    } else if (item.isPlank) {
+      setEditWorkoutForm({ sets: String(item.sets), holdSeconds: String(item.holdSeconds) });
+    } else {
+      setEditWorkoutForm({ sets: String(item.sets), reps: String(item.reps) });
+    }
+  };
+  const saveEditWorkout = () => {
+    if (!editWorkout) return;
+    const { item, index, dateKey } = editWorkout;
+    let updated;
+    if (item.isCardio) {
+      const mins = parseInt(editWorkoutForm.duration)||1;
+      const effort = editWorkoutForm.effort;
+      const effortKey = { Easy:"easy", Moderate:"medium", Hard:"hard" }[effort] || "medium";
+      updated = { ...item, duration: mins, effort, reps: mins, caloriesBurned: estimateCardioCalories(mins, effortKey) };
+    } else if (item.isPlank) {
+      updated = { ...item, sets: parseInt(editWorkoutForm.sets)||1, holdSeconds: parseInt(editWorkoutForm.holdSeconds)||30, reps: parseInt(editWorkoutForm.holdSeconds)||30 };
+    } else {
+      updated = { ...item, sets: parseInt(editWorkoutForm.sets)||1, reps: parseInt(editWorkoutForm.reps)||1 };
+    }
+    setWorkoutLog(prev => {
+      const day = [...(prev[dateKey]||[])];
+      day[index] = updated;
+      return { ...prev, [dateKey]: day };
+    });
+    setEditWorkout(null);
   };
 
   const startExercise = (ex) => {
@@ -1006,9 +1069,12 @@ export default function LIV() {
           ):(
             <>
               {todayWorkout.map((ex,i)=>(
-                <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`}}>
-                  <div>
-                    <div style={{fontSize:18,letterSpacing:1}}>{ex.name}</div>
+                <div key={i} onClick={()=>openEditWorkout(ex,i,todayKey())} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`,cursor:"pointer"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{fontSize:18,letterSpacing:1}}>{ex.name}</div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>✎ EDIT</div>
+                    </div>
                     {ex.isCardio ? (
                       <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
                         {ex.duration} min · {ex.effort} · ~{ex.caloriesBurned} cal burned
@@ -1023,7 +1089,7 @@ export default function LIV() {
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
-                    <button onClick={()=>removeWorkout(i)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
+                    <button onClick={e=>{e.stopPropagation();removeWorkout(i,todayKey());}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
                   </div>
                 </div>
               ))}
@@ -1052,7 +1118,7 @@ export default function LIV() {
             </div>
           </div>
           <button onClick={()=>setShowFoodModal(true)} className="pr" style={{...C.btn(),marginBottom:16}}>+ LOG FOOD</button>
-          {todayFood.length===0?(<div style={{textAlign:"center",padding:"40px 20px"}}><div style={{fontSize:40,marginBottom:8}}>🥗</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>No food logged yet.</div></div>):todayFood.map(food=>(<div key={food.id} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div><button onClick={()=>removeFood(food.id)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button></div></div>))}
+          {todayFood.length===0?(<div style={{textAlign:"center",padding:"40px 20px"}}><div style={{fontSize:40,marginBottom:8}}>🥗</div><div style={{fontFamily:"Barlow,sans-serif",color:"#444"}}>No food logged yet.</div></div>):todayFood.map((food,idx)=>(<div key={food.id} onClick={()=>openEditFood(food,idx,todayKey())} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>✎</div></div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div><button onClick={e=>{e.stopPropagation();removeFood(food.id);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button></div></div>))}
         </div>
       )}
 
@@ -1378,14 +1444,20 @@ export default function LIV() {
                 {dayWorkout.length>0&&(<>
                   <div style={{fontSize:13,letterSpacing:3,color:"#ff4500",marginBottom:12}}>💪 WORKOUT — {dayWorkout.length} EXERCISES</div>
                   {dayWorkout.map((ex,i)=>(
-                    <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`,marginBottom:8}}>
-                      <div>
-                        <div style={{fontSize:15,letterSpacing:1}}>{ex.name}</div>
+                    <div key={i} onClick={()=>openEditWorkout(ex,i,selectedDay)} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`,marginBottom:8,cursor:"pointer"}}>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <div style={{fontSize:15,letterSpacing:1}}>{ex.name}</div>
+                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555"}}>✎</div>
+                        </div>
                         <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
                           {ex.isCardio ? `${ex.duration} min · ${ex.effort} · ~${ex.caloriesBurned} cal` : ex.isPlank ? `${ex.sets} sets × ${ex.holdSeconds}s` : `${ex.sets} sets × ${ex.reps} reps`}
                         </div>
                       </div>
-                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#444"}}>{ex.time}</div>
+                        <button onClick={e=>{e.stopPropagation();removeWorkout(i,selectedDay);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
+                      </div>
                     </div>
                   ))}
                 </>)}
@@ -1394,14 +1466,17 @@ export default function LIV() {
                   <button onClick={()=>{setBackfillDay(selectedDay);setShowFoodModal(true);}} style={{background:"#ff4500",border:"none",color:"#fff",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD FOOD</button>
                 </div>
                 {dayFood.length>0&&dayFood.map((food,i)=>(
-                  <div key={i} style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div key={i} onClick={()=>openEditFood(food,i,selectedDay)} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,cursor:"pointer"}}>
                     <div style={{flex:1}}>
-                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555"}}>✎</div>
+                      </div>
                       <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
                       <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
-                      <button onClick={()=>removeFood(food.id,selectedDay)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
+                      <button onClick={e=>{e.stopPropagation();removeFood(food.id,selectedDay);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",width:28,height:28,borderRadius:"50%",cursor:"pointer",fontSize:14}}>×</button>
                     </div>
                   </div>
                 ))}
@@ -1411,6 +1486,117 @@ export default function LIV() {
               </div>
             );
           })()}
+        </div>
+      )}
+      {/* ─── EDIT FOOD MODAL ─── */}
+      {editFood&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:400,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:20,letterSpacing:2}}>EDIT FOOD</div>
+            <button onClick={()=>setEditFood(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+          </div>
+          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Tap any field to update.</div>
+          <div style={C.lbl}>NAME</div>
+          <input style={C.inp} value={editFoodForm.name} onChange={e=>setEditFoodForm(p=>({...p,name:e.target.value}))}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={editFoodForm.calories} onChange={e=>setEditFoodForm(p=>({...p,calories:e.target.value}))}/></div>
+            <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={editFoodForm.protein} onChange={e=>setEditFoodForm(p=>({...p,protein:e.target.value}))}/></div>
+            <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={editFoodForm.carbs} onChange={e=>setEditFoodForm(p=>({...p,carbs:e.target.value}))}/></div>
+            <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={editFoodForm.fat} onChange={e=>setEditFoodForm(p=>({...p,fat:e.target.value}))}/></div>
+          </div>
+          {/* Live macro preview */}
+          <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginTop:4,marginBottom:20}}>
+            {[{l:"CALS",v:parseInt(editFoodForm.calories)||0,c:"#ff4500"},{l:"PROTEIN",v:`${parseInt(editFoodForm.protein)||0}g`,c:"#00d4ff"},{l:"CARBS",v:`${parseInt(editFoodForm.carbs)||0}g`,c:"#ffcc00"},{l:"FAT",v:`${parseInt(editFoodForm.fat)||0}g`,c:"#ff69b4"}].map((m,i)=>(
+              <div key={i}><div style={{fontSize:18,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
+            ))}
+          </div>
+          <button onClick={saveEditFood} className="pr" style={C.btn()}>✓ SAVE CHANGES</button>
+          <button onClick={()=>setEditFood(null)} className="pr" style={{...C.btn("ghost"),marginTop:8,fontSize:14}}>CANCEL</button>
+        </div>
+      )}
+
+      {/* ─── EDIT WORKOUT MODAL ─── */}
+      {editWorkout&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:400,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:20,letterSpacing:2}}>EDIT WORKOUT</div>
+            <button onClick={()=>setEditWorkout(null)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+          </div>
+          <div style={{...C.card,marginBottom:16,borderLeft:`3px solid ${editWorkout.item.isCardio?"#00d4ff":editWorkout.item.isPlank?"#ff8c00":"#ff4500"}`}}>
+            <div style={{fontSize:18,letterSpacing:1}}>{editWorkout.item.name}</div>
+            <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{editWorkout.item.time}</div>
+          </div>
+
+          {editWorkout.item.isCardio && (
+            <>
+              <div style={C.lbl}>DURATION (minutes)</div>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+                <button onClick={()=>setEditWorkoutForm(p=>({...p,duration:String(Math.max(1,parseInt(p.duration||1)-5))}))} className="pr" style={{width:40,height:40,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:28}} type="number" value={editWorkoutForm.duration} onChange={e=>setEditWorkoutForm(p=>({...p,duration:e.target.value}))}/>
+                <button onClick={()=>setEditWorkoutForm(p=>({...p,duration:String(parseInt(p.duration||0)+5)}))} className="pr" style={{width:40,height:40,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+              </div>
+              <div style={C.lbl}>EFFORT LEVEL</div>
+              <div style={{display:"flex",gap:8,marginBottom:20}}>
+                {[{l:"EASY",v:"Easy",c:"#00d4ff"},{l:"MODERATE",v:"Moderate",c:"#ff8c00"},{l:"HARD",v:"Hard",c:"#ff4500"}].map(e=>(
+                  <button key={e.v} onClick={()=>setEditWorkoutForm(p=>({...p,effort:e.v}))} className="pr" style={{flex:1,padding:"10px 4px",borderRadius:10,border:`2px solid ${editWorkoutForm.effort===e.v?e.c:"#2a2a2a"}`,background:editWorkoutForm.effort===e.v?"#1a0800":"#111",color:editWorkoutForm.effort===e.v?e.c:"#555",cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:11,letterSpacing:1}}>{e.l}</button>
+                ))}
+              </div>
+              <div style={{...C.card,textAlign:"center",marginBottom:20,background:"#0d1a0d",border:"1px solid #1a3a1a"}}>
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:4}}>ESTIMATED CALORIES BURNED</div>
+                <div style={{fontSize:32,color:"#ff8c00"}}>{estimateCardioCalories(parseInt(editWorkoutForm.duration)||0, {Easy:"easy",Moderate:"medium",Hard:"hard"}[editWorkoutForm.effort]||"medium")}</div>
+              </div>
+            </>
+          )}
+
+          {editWorkout.item.isPlank && (
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+                <div>
+                  <div style={C.lbl}>SETS COMPLETED</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <button onClick={()=>setEditWorkoutForm(p=>({...p,sets:String(Math.max(1,parseInt(p.sets||1)-1))}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                    <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:24}} type="number" value={editWorkoutForm.sets} onChange={e=>setEditWorkoutForm(p=>({...p,sets:e.target.value}))}/>
+                    <button onClick={()=>setEditWorkoutForm(p=>({...p,sets:String(parseInt(p.sets||0)+1)}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                  </div>
+                </div>
+                <div>
+                  <div style={C.lbl}>HOLD TIME (sec)</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <button onClick={()=>setEditWorkoutForm(p=>({...p,holdSeconds:String(Math.max(10,parseInt(p.holdSeconds||30)-15))}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                    <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:24}} type="number" value={editWorkoutForm.holdSeconds} onChange={e=>setEditWorkoutForm(p=>({...p,holdSeconds:e.target.value}))}/>
+                    <button onClick={()=>setEditWorkoutForm(p=>({...p,holdSeconds:String(parseInt(p.holdSeconds||0)+15)}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                  </div>
+                </div>
+              </div>
+              <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",textAlign:"center",marginBottom:20}}>
+                {editWorkoutForm.sets} sets × {editWorkoutForm.holdSeconds}s = {Math.round(parseInt(editWorkoutForm.sets||0)*parseInt(editWorkoutForm.holdSeconds||0)/60*10)/10} min total
+              </div>
+            </>
+          )}
+
+          {!editWorkout.item.isCardio && !editWorkout.item.isPlank && (
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              <div>
+                <div style={C.lbl}>SETS</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <button onClick={()=>setEditWorkoutForm(p=>({...p,sets:String(Math.max(1,parseInt(p.sets||1)-1))}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                  <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:28}} type="number" value={editWorkoutForm.sets} onChange={e=>setEditWorkoutForm(p=>({...p,sets:e.target.value}))}/>
+                  <button onClick={()=>setEditWorkoutForm(p=>({...p,sets:String(parseInt(p.sets||0)+1)}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                </div>
+              </div>
+              <div>
+                <div style={C.lbl}>REPS</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <button onClick={()=>setEditWorkoutForm(p=>({...p,reps:String(Math.max(1,parseInt(p.reps||1)-1))})) } className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                  <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:28}} type="number" value={editWorkoutForm.reps} onChange={e=>setEditWorkoutForm(p=>({...p,reps:e.target.value}))}/>
+                  <button onClick={()=>setEditWorkoutForm(p=>({...p,reps:String(parseInt(p.reps||0)+1)}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button onClick={saveEditWorkout} className="pr" style={C.btn()}>✓ SAVE CHANGES</button>
+          <button onClick={()=>setEditWorkout(null)} className="pr" style={{...C.btn("ghost"),marginTop:8,fontSize:14}}>CANCEL</button>
         </div>
       )}
     </div>
