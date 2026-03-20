@@ -335,14 +335,21 @@ export default function LIV() {
   }, [plankResting, plankRestCountdown]);
 
   const stopScanner = useCallback(() => {
-    try { readerRef.current?.reset(); readerRef.current = null; } catch {}
+    try {
+      if (typeof readerRef.current === "number") {
+        cancelAnimationFrame(readerRef.current);
+      } else {
+        readerRef.current?.reset();
+      }
+      readerRef.current = null;
+    } catch {}
     try { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null; } catch {}
   }, []);
-
   const startScanner = async () => {
     setScanState("scanning");
     setScanResult(null);
     setScanHint("Point camera at barcode...");
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -352,25 +359,57 @@ export default function LIV() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      const ZXing = window.ZXing;
-      if (!ZXing) { setScanHint("Scanner not ready. Use manual entry below."); return; }
-      const hints = new Map();
-      const reader = new ZXing.BrowserMultiFormatReader(hints);
-      readerRef.current = reader;
-      reader.decodeFromStream(stream, videoRef.current, (result, err) => {
-        if (result) {
-          const code = result.getText();
-          setScanHint("✓ Barcode detected!");
-          stopScanner();
-          fetchBarcode(code);
+
+      // Try native BarcodeDetector first (iOS 17+, Chrome on Android)
+      if ("BarcodeDetector" in window) {
+        setScanHint("Point camera at barcode...");
+        const detector = new window.BarcodeDetector({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"]
+        });
+
+        const scan = async () => {
+          if (!streamRef.current) return;
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              setScanHint("✓ Barcode detected!");
+              stopScanner();
+              fetchBarcode(code);
+              return;
+            }
+          } catch {}
+          // Keep scanning
+          readerRef.current = requestAnimationFrame(scan);
+        };
+
+        readerRef.current = requestAnimationFrame(scan);
+
+      } else {
+        // Fallback to ZXing
+        const ZXing = window.ZXing;
+        if (!ZXing) {
+          setScanHint("Scanner not ready. Use manual entry below.");
+          return;
         }
-      });
+        const hints = new Map();
+        const reader = new ZXing.BrowserMultiFormatReader(hints);
+        readerRef.current = reader;
+        reader.decodeFromStream(stream, videoRef.current, (result, err) => {
+          if (result) {
+            const code = result.getText();
+            setScanHint("✓ Barcode detected!");
+            stopScanner();
+            fetchBarcode(code);
+          }
+        });
+      }
+
     } catch (e) {
       setScanState("error");
       setScanHint("Camera access denied. Please allow camera permissions in Safari.");
     }
   };
-
   const fetchBarcode = async (code) => {
   setScanState("loading");
 
