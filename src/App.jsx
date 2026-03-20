@@ -372,50 +372,65 @@ export default function LIV() {
   };
 
   const fetchBarcode = async (code) => {
-    setScanState("loading");
-    try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-      const data = await res.json();
-      if (data.status === 1) {
-        const n = data.product.nutriments;
-        const product = data.product;
+  setScanState("loading");
 
-        // Parse actual serving size from the product
-        const servingSizeRaw = product.serving_size || "";
-        const parsed = parseServingSize(servingSizeRaw);
+  // Primary: FatSecret via serverless function
+  try {
+    const res = await fetch(`/api/fatsecret?barcode=${code}`);
+    const data = await res.json();
 
-        // Check if product has per-serving nutriment data
-        const hasServingData = n["energy-kcal_serving"] != null || n["proteins_serving"] != null;
+    if (res.ok && data.name) {
+      setScanResult({
+        name: data.name,
+        calories: data.calories,
+        protein: data.protein,
+        carbs: data.carbs,
+        fat: data.fat,
+        servingSize: data.servingSize,
+        servingUnit: data.servingUnit,
+        _actualServingLabel: data.servingDescription || `${data.servingSize}${data.servingUnit}`,
+        _actualServingCalories: data.calories,
+        _actualServingProtein: data.protein,
+      });
+      setScanState("result");
+      return;
+    }
+  } catch (e) {
+    console.log("FatSecret miss, trying fallback...");
+  }
 
-        // Store per-100g macros as the base for scaling
-        const per100g = {
-          calories: Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0)),
-          protein: parseFloat((n["proteins_100g"] || 0).toFixed(1)),
-          carbs: parseFloat((n["carbohydrates_100g"] || 0).toFixed(1)),
-          fat: parseFloat((n["fat_100g"] || 0).toFixed(1)),
-        };
-
-        // If we have per-serving data, derive per-100g equivalents from serving data for accuracy
-        // But prefer 100g data since it's more reliable
-        setScanResult({
-          name: product.product_name || "Scanned Product",
-          // per-100g values (base for all calculations)
-          calories: per100g.calories,
-          protein: per100g.protein,
-          carbs: per100g.carbs,
-          fat: per100g.fat,
-          servingSize: parsed.size,
-          servingUnit: parsed.unit,
-          // actual serving display info for the result card
-          _actualServingLabel: servingSizeRaw || "100g",
-          _actualServingCalories: hasServingData ? Math.round(n["energy-kcal_serving"] || 0) : null,
-          _actualServingProtein: hasServingData ? Math.round(n["proteins_serving"] || 0) : null,
-        });
-        setScanState("result");
-      } else setScanState("notfound");
-    } catch { setScanState("error"); }
-  };
-
+  // Fallback: Open Food Facts (keep as backup)
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const data = await res.json();
+    if (data.status === 1) {
+      const n = data.product.nutriments;
+      const product = data.product;
+      const servingSizeRaw = product.serving_size || "";
+      const parsed = parseServingSize(servingSizeRaw);
+      const hasServingData = n["energy-kcal_serving"] != null || n["proteins_serving"] != null;
+      const per100g = {
+        calories: Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0)),
+        protein: parseFloat((n["proteins_100g"] || 0).toFixed(1)),
+        carbs: parseFloat((n["carbohydrates_100g"] || 0).toFixed(1)),
+        fat: parseFloat((n["fat_100g"] || 0).toFixed(1)),
+      };
+      setScanResult({
+        name: product.product_name || "Scanned Product",
+        calories: per100g.calories,
+        protein: per100g.protein,
+        carbs: per100g.carbs,
+        fat: per100g.fat,
+        servingSize: parsed.size,
+        servingUnit: parsed.unit,
+        _actualServingLabel: servingSizeRaw || "100g",
+        _actualServingCalories: hasServingData ? Math.round(n["energy-kcal_serving"] || 0) : null,
+        _actualServingProtein: hasServingData ? Math.round(n["proteins_serving"] || 0) : null,
+      });
+      setScanState("result");
+    } else setScanState("notfound");
+  } catch { setScanState("error"); }
+};
   const addFood = (food, targetDate=null) => {
     if ((food.calories===0||food.calories==="0") && (food.protein===0||food.protein==="0")) {
       setManualMacros({ name:food.name, calories:"", protein:"", carbs:"", fat:"" });
