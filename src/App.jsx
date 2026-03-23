@@ -264,13 +264,13 @@ export default function LIV() {
 
   // ── FUSE SPLASH ──
   const [showSplash, setShowSplash] = useState(() => {
-    return !localStorage.getItem("fuse_liv_launched");
+    return !localStorage.getItem("fuse_liv_launched_v2");
   });
   useEffect(() => {
     if (showSplash) {
       const t = setTimeout(() => {
         setShowSplash(false);
-        localStorage.setItem("fuse_liv_launched", "1");
+        localStorage.setItem("fuse_liv_launched_v2", "1");
       }, 2400);
       return () => clearTimeout(t);
     }
