@@ -763,6 +763,20 @@ export default function LIV() {
     return `${m}:${String(s).padStart(2,"0")}`;
   };
 
+  // ── FUSE SPLASH ──
+const [showSplash, setShowSplash] = useState(() => {
+  return !localStorage.getItem("fuse_liv_launched");
+});
+useEffect(() => {
+  if (showSplash) {
+    const t = setTimeout(() => {
+      setShowSplash(false);
+      localStorage.setItem("fuse_liv_launched", "1");
+    }, 2400);
+    return () => clearTimeout(t);
+  }
+}, [showSplash]);
+  
   return (
     <div style={C.app}>
       <style>{`
@@ -774,7 +788,8 @@ export default function LIV() {
         @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes scanline{0%{top:0%}100%{top:100%}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        .sl{animation:su 0.3s ease forwards}
+        @keyframes iconPop{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}        .sl{animation:su 0.3s ease forwards}
         .ec:hover{background:#161616!important;transform:translateX(3px);transition:all 0.2s}
         .fr:hover{background:#161616!important} .pr:active{transform:scale(0.93)}
         .scanline{position:absolute;left:0;right:0;height:2px;background:#ff4500;animation:scanline 1.5s linear infinite}
@@ -1651,6 +1666,55 @@ export default function LIV() {
 
           <button onClick={saveEditWorkout} className="pr" style={C.btn()}>✓ SAVE CHANGES</button>
           <button onClick={()=>setEditWorkout(null)} className="pr" style={{...C.btn("ghost"),marginTop:8,fontSize:14}}>CANCEL</button>
+{/* ── FUSE SPLASH ── */}
+{showSplash && (
+  <div style={{
+    position:"fixed", inset:0, background:"#0C0B0A", zIndex:9999,
+    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+    gap:12, transition:"opacity 0.6s ease",
+  }}>
+    <div style={{
+      width:64, height:64, background:"#E8503C", borderRadius:18,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      animation:"iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both",
+    }}>
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <line x1="5" y1="16" x2="22" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+        <circle cx="22" cy="16" r="6" stroke="white" strokeWidth="2"/>
+        <circle cx="22" cy="16" r="2.4" fill="white"/>
+      </svg>
+    </div>
+    <div style={{
+      fontFamily:"Bebas Neue,sans-serif", fontSize:38, letterSpacing:8,
+      color:"#fff", lineHeight:1,
+      animation:"fadeUp 0.4s ease 0.7s both",
+    }}>LIV</div>
+    <div style={{
+      fontFamily:"Barlow,sans-serif", fontSize:10, color:"rgba(255,255,255,0.3)",
+      letterSpacing:"0.14em", textTransform:"uppercase",
+      animation:"fadeUp 0.4s ease 0.9s both",
+    }}>a fuse app · by TNT Labs</div>
+  </div>
+)}
+
+{/* ── FUSE FOOTER ── */}
+<div style={{
+  borderTop:"1px solid #1a1a1a", padding:"10px 16px",
+  display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+}}>
+  <div style={{
+    width:15, height:15, background:"#0C0B0A", border:"1px solid #333",
+    borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+  }}>
+    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+      <line x1="1.5" y1="4.5" x2="6.5" y2="4.5" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
+      <circle cx="6.5" cy="4.5" r="1.8" stroke="white" strokeWidth="0.9"/>
+    </svg>
+  </div>
+  <span style={{fontFamily:"Bebas Neue,sans-serif", fontSize:10, color:"#555", letterSpacing:"0.08em"}}>fuse</span>
+  <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#333"}}>·</span>
+  <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#555"}}>by TNT Labs</span>
+</div>
         </div>
       )}
     </div>
