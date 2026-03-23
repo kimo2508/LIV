@@ -90,23 +90,19 @@ const ALL_LIBRARY = Object.entries(EXERCISE_LIBRARY).flatMap(([group, data]) =>
   data.exercises.map(ex => ({ ...ex, muscleGroup: group }))
 );
 
-// MET values for calorie estimation (calories = MET * weight_kg * hours)
-// We use a base weight of 85kg (~187 lbs) as default since user is ~253 lbs
-// Effort levels map to MET ranges
 const CARDIO_MET = {
-  easy: 5,    // light jogging, easy cycling, casual swim
-  medium: 8,  // moderate run, steady cycling, brisk walk on incline
-  hard: 11,   // running fast, HIIT, hard rowing
+  easy: 5,
+  medium: 8,
+  hard: 11,
 };
 
 function estimateCardioCalories(minutes, effort) {
-  const weightKg = 115; // ~253 lbs, will use a reasonable default
+  const weightKg = 115;
   const met = CARDIO_MET[effort] || 8;
   return Math.round(met * weightKg * (minutes / 60));
 }
 
 const PRESET_FOODS = [
-  // Proteins
   {name:"Chicken Breast",calories:165,protein:31,carbs:0,fat:4,servingSize:100,servingUnit:"g"},
   {name:"Ground Beef 93% Lean",calories:152,protein:24,carbs:0,fat:6,servingSize:100,servingUnit:"g"},
   {name:"Ground Turkey",calories:149,protein:22,carbs:0,fat:7,servingSize:100,servingUnit:"g"},
@@ -123,13 +119,11 @@ const PRESET_FOODS = [
   {name:"Cottage Cheese",calories:98,protein:11,carbs:3,fat:4,servingSize:100,servingUnit:"g"},
   {name:"Greek Yogurt (plain)",calories:59,protein:10,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Whey Protein Powder",calories:120,protein:24,carbs:3,fat:2,servingSize:100,servingUnit:"g"},
-  // Dairy
   {name:"Whole Milk",calories:61,protein:3,carbs:5,fat:3,servingSize:100,servingUnit:"g"},
   {name:"2% Milk",calories:50,protein:3,carbs:5,fat:2,servingSize:100,servingUnit:"g"},
   {name:"Cheddar Cheese",calories:402,protein:25,carbs:1,fat:33,servingSize:100,servingUnit:"g"},
   {name:"Mozzarella Cheese",calories:280,protein:22,carbs:2,fat:17,servingSize:100,servingUnit:"g"},
   {name:"Butter",calories:717,protein:1,carbs:0,fat:81,servingSize:100,servingUnit:"g"},
-  // Grains
   {name:"White Rice (cooked)",calories:130,protein:3,carbs:28,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Brown Rice (cooked)",calories:112,protein:3,carbs:24,fat:1,servingSize:100,servingUnit:"g"},
   {name:"Oats (dry)",calories:389,protein:17,carbs:66,fat:7,servingSize:100,servingUnit:"g"},
@@ -140,7 +134,6 @@ const PRESET_FOODS = [
   {name:"Quinoa (cooked)",calories:120,protein:4,carbs:21,fat:2,servingSize:100,servingUnit:"g"},
   {name:"White Potato",calories:77,protein:2,carbs:17,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Sweet Potato",calories:86,protein:2,carbs:20,fat:0,servingSize:100,servingUnit:"g"},
-  // Fruits
   {name:"Banana",calories:89,protein:1,carbs:23,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Apple",calories:52,protein:0,carbs:14,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Orange",calories:47,protein:1,carbs:12,fat:0,servingSize:100,servingUnit:"g"},
@@ -149,7 +142,6 @@ const PRESET_FOODS = [
   {name:"Mango",calories:60,protein:1,carbs:15,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Watermelon",calories:30,protein:1,carbs:8,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Pineapple",calories:50,protein:1,carbs:13,fat:0,servingSize:100,servingUnit:"g"},
-  // Vegetables
   {name:"Broccoli",calories:34,protein:3,carbs:7,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Spinach",calories:23,protein:3,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Asparagus",calories:20,protein:2,carbs:4,fat:0,servingSize:100,servingUnit:"g"},
@@ -160,18 +152,15 @@ const PRESET_FOODS = [
   {name:"Carrots",calories:41,protein:1,carbs:10,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Mushrooms",calories:22,protein:3,carbs:3,fat:0,servingSize:100,servingUnit:"g"},
   {name:"Avocado",calories:160,protein:2,carbs:9,fat:15,servingSize:100,servingUnit:"g"},
-  // Fats & Nuts
   {name:"Almonds",calories:579,protein:21,carbs:22,fat:50,servingSize:100,servingUnit:"g"},
   {name:"Peanut Butter",calories:588,protein:25,carbs:20,fat:50,servingSize:100,servingUnit:"g"},
   {name:"Almond Butter",calories:614,protein:21,carbs:19,fat:56,servingSize:100,servingUnit:"g"},
   {name:"Olive Oil",calories:884,protein:0,carbs:0,fat:100,servingSize:100,servingUnit:"g"},
   {name:"Walnuts",calories:654,protein:15,carbs:14,fat:65,servingSize:100,servingUnit:"g"},
   {name:"Cashews",calories:553,protein:18,carbs:30,fat:44,servingSize:100,servingUnit:"g"},
-  // Legumes
   {name:"Black Beans (cooked)",calories:132,protein:9,carbs:24,fat:1,servingSize:100,servingUnit:"g"},
   {name:"Chickpeas (cooked)",calories:164,protein:9,carbs:27,fat:3,servingSize:100,servingUnit:"g"},
   {name:"Lentils (cooked)",calories:116,protein:9,carbs:20,fat:0,servingSize:100,servingUnit:"g"},
-  // Snacks & Other
   {name:"Quest Protein Bar",calories:200,protein:21,carbs:22,fat:9,servingSize:100,servingUnit:"g"},
   {name:"Rice Cakes",calories:387,protein:8,carbs:81,fat:3,servingSize:100,servingUnit:"g"},
   {name:"Dark Chocolate 70%",calories:598,protein:8,carbs:46,fat:43,servingSize:100,servingUnit:"g"},
@@ -191,11 +180,9 @@ function saveLS(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
-// Parse serving size string from OpenFoodFacts (e.g. "414 ml", "1 bottle (414ml)", "28g")
 function parseServingSize(servingSizeStr) {
   if (!servingSizeStr) return { size: 100, unit: "g" };
   const str = servingSizeStr.toLowerCase();
-  // Try to find a number followed by a unit
   const match = str.match(/(\d+(?:\.\d+)?)\s*(ml|g|oz|fl oz|cup|tbsp|tsp|l)/);
   if (match) {
     const size = parseFloat(match[1]);
@@ -249,26 +236,23 @@ export default function LIV() {
   const [manualBarcode, setManualBarcode] = useState("");
   const [scanHint, setScanHint] = useState("Point camera at barcode...");
 
-  // Edit modals
-  const [editFood, setEditFood] = useState(null); // { item, index, dateKey }
+  const [editFood, setEditFood] = useState(null);
   const [editFoodForm, setEditFoodForm] = useState({ name:"", calories:"", protein:"", carbs:"", fat:"" });
-  const [editWorkout, setEditWorkout] = useState(null); // { item, index, dateKey }
+  const [editWorkout, setEditWorkout] = useState(null);
   const [editWorkoutForm, setEditWorkoutForm] = useState({});
 
-  // Cardio logging state
   const [cardioMinutes, setCardioMinutes] = useState("30");
   const [cardioEffort, setCardioEffort] = useState("medium");
-  const [cardioRunning, setCardioRunning] = useState(false); // live timer running
-  const [cardioElapsed, setCardioElapsed] = useState(0); // seconds elapsed
+  const [cardioRunning, setCardioRunning] = useState(false);
+  const [cardioElapsed, setCardioElapsed] = useState(0);
   const cardioTimerRef = useRef(null);
 
-  // Plank state
   const [plankSets, setPlankSets] = useState(3);
-  const [plankSetDuration, setPlankSetDuration] = useState(60); // seconds per set
+  const [plankSetDuration, setPlankSetDuration] = useState(60);
   const [plankCurrentSet, setPlankCurrentSet] = useState(1);
   const [plankCountdown, setPlankCountdown] = useState(60);
   const [plankRunning, setPlankRunning] = useState(false);
-  const [plankDone, setPlankDone] = useState(false); // current set finished
+  const [plankDone, setPlankDone] = useState(false);
   const [plankResting, setPlankResting] = useState(false);
   const [plankRestCountdown, setPlankRestCountdown] = useState(30);
   const plankTimerRef = useRef(null);
@@ -277,6 +261,20 @@ export default function LIV() {
   const streamRef = useRef(null);
   const restRef = useRef(null);
   const readerRef = useRef(null);
+
+  // ── FUSE SPLASH ──
+  const [showSplash, setShowSplash] = useState(() => {
+    return !localStorage.getItem("fuse_liv_launched");
+  });
+  useEffect(() => {
+    if (showSplash) {
+      const t = setTimeout(() => {
+        setShowSplash(false);
+        localStorage.setItem("fuse_liv_launched", "1");
+      }, 2400);
+      return () => clearTimeout(t);
+    }
+  }, [showSplash]);
 
   const quote = getDailyQuote();
   const todayWorkout = workoutLog[todayKey()] || [];
@@ -300,7 +298,6 @@ export default function LIV() {
 
   useEffect(() => { if (tab !== "nutrition") stopScanner(); }, [tab]);
 
-  // Cardio live timer
   useEffect(() => {
     if (cardioRunning) {
       cardioTimerRef.current = setInterval(() => setCardioElapsed(e => e + 1), 1000);
@@ -310,13 +307,11 @@ export default function LIV() {
     return () => clearInterval(cardioTimerRef.current);
   }, [cardioRunning]);
 
-  // Plank timer
   useEffect(() => {
     if (plankRunning && !plankResting) {
       if (plankCountdown > 0) {
         plankTimerRef.current = setTimeout(() => setPlankCountdown(c => c - 1), 1000);
       } else {
-        // Set complete
         setPlankRunning(false);
         setPlankDone(true);
       }
@@ -324,7 +319,6 @@ export default function LIV() {
     return () => clearTimeout(plankTimerRef.current);
   }, [plankRunning, plankCountdown, plankResting]);
 
-  // Plank rest timer
   useEffect(() => {
     if (plankResting && plankRestCountdown > 0) {
       plankTimerRef.current = setTimeout(() => setPlankRestCountdown(c => c - 1), 1000);
@@ -345,11 +339,11 @@ export default function LIV() {
     } catch {}
     try { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null; } catch {}
   }, []);
+
   const startScanner = async () => {
     setScanState("scanning");
     setScanResult(null);
     setScanHint("Point camera at barcode...");
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -359,14 +353,11 @@ export default function LIV() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-
-      // Try native BarcodeDetector first (iOS 17+, Chrome on Android)
       if ("BarcodeDetector" in window) {
         setScanHint("Point camera at barcode...");
         const detector = new window.BarcodeDetector({
           formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"]
         });
-
         const scan = async () => {
           if (!streamRef.current) return;
           try {
@@ -379,14 +370,10 @@ export default function LIV() {
               return;
             }
           } catch {}
-          // Keep scanning
           readerRef.current = requestAnimationFrame(scan);
         };
-
         readerRef.current = requestAnimationFrame(scan);
-
       } else {
-        // Fallback to ZXing
         const ZXing = window.ZXing;
         if (!ZXing) {
           setScanHint("Scanner not ready. Use manual entry below.");
@@ -404,79 +391,74 @@ export default function LIV() {
           }
         });
       }
-
     } catch (e) {
       setScanState("error");
       setScanHint("Camera access denied. Please allow camera permissions in Safari.");
     }
   };
+
   const fetchBarcode = async (code) => {
-  setScanState("loading");
-
-  // Primary: FatSecret via serverless function
-  try {
-    const res = await fetch(`/api/fatsecret?barcode=${code}`);
-    const data = await res.json();
-
-    if (res.ok && data.name) {
-      setScanResult({
-        name: data.name,
-        calories: data.calories,
-        protein: data.protein,
-        carbs: data.carbs,
-        fat: data.fat,
-        servingSize: data.servingSize,
-        servingUnit: data.servingUnit,
-        _actualServingLabel: data.servingDescription || `${data.servingSize}${data.servingUnit}`,
-        _actualServingCalories: data.calories,
-        _actualServingProtein: data.protein,
-      });
-      setScanState("result");
-      return;
+    setScanState("loading");
+    try {
+      const res = await fetch(`/api/fatsecret?barcode=${code}`);
+      const data = await res.json();
+      if (res.ok && data.name) {
+        setScanResult({
+          name: data.name,
+          calories: data.calories,
+          protein: data.protein,
+          carbs: data.carbs,
+          fat: data.fat,
+          servingSize: data.servingSize,
+          servingUnit: data.servingUnit,
+          _actualServingLabel: data.servingDescription || `${data.servingSize}${data.servingUnit}`,
+          _actualServingCalories: data.calories,
+          _actualServingProtein: data.protein,
+        });
+        setScanState("result");
+        return;
+      }
+    } catch (e) {
+      console.log("FatSecret miss, trying fallback...");
     }
-  } catch (e) {
-    console.log("FatSecret miss, trying fallback...");
-  }
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+      const data = await res.json();
+      if (data.status === 1) {
+        const n = data.product.nutriments;
+        const product = data.product;
+        const servingSizeRaw = product.serving_size || "";
+        const parsed = parseServingSize(servingSizeRaw);
+        const hasServingData = n["energy-kcal_serving"] != null || n["proteins_serving"] != null;
+        const per100g = {
+          calories: Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0)),
+          protein: parseFloat((n["proteins_100g"] || 0).toFixed(1)),
+          carbs: parseFloat((n["carbohydrates_100g"] || 0).toFixed(1)),
+          fat: parseFloat((n["fat_100g"] || 0).toFixed(1)),
+        };
+        setScanResult({
+          name: product.product_name || "Scanned Product",
+          calories: per100g.calories,
+          protein: per100g.protein,
+          carbs: per100g.carbs,
+          fat: per100g.fat,
+          servingSize: parsed.size,
+          servingUnit: parsed.unit,
+          _actualServingLabel: servingSizeRaw || "100g",
+          _actualServingCalories: hasServingData ? Math.round(n["energy-kcal_serving"] || 0) : null,
+          _actualServingProtein: hasServingData ? Math.round(n["proteins_serving"] || 0) : null,
+        });
+        setScanState("result");
+      } else setScanState("notfound");
+    } catch { setScanState("error"); }
+  };
 
-  // Fallback: Open Food Facts (keep as backup)
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-    const data = await res.json();
-    if (data.status === 1) {
-      const n = data.product.nutriments;
-      const product = data.product;
-      const servingSizeRaw = product.serving_size || "";
-      const parsed = parseServingSize(servingSizeRaw);
-      const hasServingData = n["energy-kcal_serving"] != null || n["proteins_serving"] != null;
-      const per100g = {
-        calories: Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0)),
-        protein: parseFloat((n["proteins_100g"] || 0).toFixed(1)),
-        carbs: parseFloat((n["carbohydrates_100g"] || 0).toFixed(1)),
-        fat: parseFloat((n["fat_100g"] || 0).toFixed(1)),
-      };
-      setScanResult({
-        name: product.product_name || "Scanned Product",
-        calories: per100g.calories,
-        protein: per100g.protein,
-        carbs: per100g.carbs,
-        fat: per100g.fat,
-        servingSize: parsed.size,
-        servingUnit: parsed.unit,
-        _actualServingLabel: servingSizeRaw || "100g",
-        _actualServingCalories: hasServingData ? Math.round(n["energy-kcal_serving"] || 0) : null,
-        _actualServingProtein: hasServingData ? Math.round(n["proteins_serving"] || 0) : null,
-      });
-      setScanState("result");
-    } else setScanState("notfound");
-  } catch { setScanState("error"); }
-};
   const addFood = (food, targetDate=null) => {
     if ((food.calories===0||food.calories==="0") && (food.protein===0||food.protein==="0")) {
       setManualMacros({ name:food.name, calories:"", protein:"", carbs:"", fat:"" });
       setShowManualEntry(true);
       return;
     }
-    // Pre-populate with the product's actual serving size if available
     const preQty = food.servingSize ? String(food.servingSize) : "100";
     const preUnit = food.servingUnit || "g";
     setServingFood({...food, _targetDate: targetDate});
@@ -488,20 +470,15 @@ export default function LIV() {
     if (!servingFood) return;
     const qty = parseFloat(servingQty) || 1;
     const unit = servingUnit;
-
-    // Convert everything to grams for scaling against per-100g base
     const gramsMap = { g:1, oz:28.35, lbs:453.59, kg:1000, ml:1, cups:240, tbsp:15, tsp:5 };
-
     let scale;
     if (unit === "piece") {
-      // 1 piece = 1 full serving of the product's serving size
       const baseGrams = (servingFood.servingSize || 100) * (gramsMap[servingFood.servingUnit || "g"] || 1);
       scale = qty * baseGrams / 100;
     } else {
       const inputGrams = qty * (gramsMap[unit] || 1);
       scale = inputGrams / 100;
     }
-
     const scaled = {
       name: `${servingFood.name} (${qty}${unit})`,
       calories: Math.round(servingFood.calories * scale),
@@ -551,7 +528,6 @@ export default function LIV() {
     setWorkoutLog(prev => ({ ...prev, [key]: (prev[key]||[]).filter((_,i) => i !== index) }));
   };
 
-  // ── EDIT FOOD ──
   const openEditFood = (item, index, dateKey) => {
     setEditFood({ item, index, dateKey });
     setEditFoodForm({ name: item.name, calories: String(item.calories), protein: String(item.protein), carbs: String(item.carbs), fat: String(item.fat) });
@@ -575,7 +551,6 @@ export default function LIV() {
     setEditFood(null);
   };
 
-  // ── EDIT WORKOUT ──
   const openEditWorkout = (item, index, dateKey) => {
     setEditWorkout({ item, index, dateKey });
     if (item.isCardio) {
@@ -612,17 +587,12 @@ export default function LIV() {
     setActiveExercise({ ...ex, defaultSets:ex.defaultSets||4, defaultReps:ex.defaultReps||10 });
     setCurrentSet(1); setRepsLeft(ex.defaultReps||10);
     setIsResting(false); setCompletedSets({});
-
-    // Reset cardio state
     setCardioMinutes("30"); setCardioEffort("medium");
     setCardioRunning(false); setCardioElapsed(0);
-
-    // Reset plank state
     setPlankSets(3); setPlankSetDuration(60);
     setPlankCurrentSet(1); setPlankCountdown(60);
     setPlankRunning(false); setPlankDone(false);
     setPlankResting(false); setPlankRestCountdown(30);
-
     setTab("active");
   };
 
@@ -645,40 +615,28 @@ export default function LIV() {
     }
   };
 
-  // Save cardio session
   const saveCardio = () => {
-    const mins = cardioRunning
-      ? Math.round(cardioElapsed / 60)
-      : parseInt(cardioMinutes) || 0;
+    const mins = cardioRunning ? Math.round(cardioElapsed / 60) : parseInt(cardioMinutes) || 0;
     if (mins === 0) return;
     const cals = estimateCardioCalories(mins, cardioEffort);
     const effortLabel = { easy:"Easy", medium:"Moderate", hard:"Hard" }[cardioEffort] || "Moderate";
     const key = todayKey();
     setWorkoutLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), {
-      name: activeExercise.name,
-      sets: 1,
-      reps: mins, // repurpose as minutes for cardio
-      isCardio: true,
-      duration: mins,
-      effort: effortLabel,
-      caloriesBurned: cals,
+      name: activeExercise.name, sets: 1, reps: mins, isCardio: true,
+      duration: mins, effort: effortLabel, caloriesBurned: cals,
       time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
     }]}));
     setCardioRunning(false); clearInterval(cardioTimerRef.current);
     setActiveExercise(null); setTab("exercises");
   };
 
-  // Save plank session
   const savePlank = () => {
     const completedPlankSets = plankCurrentSet - 1 + (plankDone ? 1 : 0);
     if (completedPlankSets === 0) { setActiveExercise(null); setTab("exercises"); return; }
     const key = todayKey();
     setWorkoutLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), {
-      name: "Plank",
-      sets: completedPlankSets,
-      reps: plankSetDuration, // seconds per set
-      isPlank: true,
-      holdSeconds: plankSetDuration,
+      name: "Plank", sets: completedPlankSets, reps: plankSetDuration,
+      isPlank: true, holdSeconds: plankSetDuration,
       time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
     }]}));
     setPlankRunning(false); setPlankResting(false);
@@ -763,20 +721,6 @@ export default function LIV() {
     return `${m}:${String(s).padStart(2,"0")}`;
   };
 
-  // ── FUSE SPLASH ──
-const [showSplash, setShowSplash] = useState(() => {
-  return !localStorage.getItem("fuse_liv_launched");
-});
-useEffect(() => {
-  if (showSplash) {
-    const t = setTimeout(() => {
-      setShowSplash(false);
-      localStorage.setItem("fuse_liv_launched", "1");
-    }, 2400);
-    return () => clearTimeout(t);
-  }
-}, [showSplash]);
-  
   return (
     <div style={C.app}>
       <style>{`
@@ -789,7 +733,8 @@ useEffect(() => {
         @keyframes scanline{0%{top:0%}100%{top:100%}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
         @keyframes iconPop{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}        .sl{animation:su 0.3s ease forwards}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .sl{animation:su 0.3s ease forwards}
         .ec:hover{background:#161616!important;transform:translateX(3px);transition:all 0.2s}
         .fr:hover{background:#161616!important} .pr:active{transform:scale(0.93)}
         .scanline{position:absolute;left:0;right:0;height:2px;background:#ff4500;animation:scanline 1.5s linear infinite}
@@ -835,7 +780,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ─── ACTIVE EXERCISE TAB ─── */}
       {tab==="active"&&activeExercise&&(
         <div style={C.sec} className="sl">
           <div style={C.acard}>
@@ -843,10 +787,8 @@ useEffect(() => {
             <div style={{fontSize:28,letterSpacing:2,lineHeight:1.1,marginBottom:4}}>{activeExercise.name}</div>
             <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#666",marginBottom:18}}>{activeExercise.muscleGroup} · {activeExercise.type}</div>
 
-            {/* ── CARDIO MODE ── */}
             {isCardio(activeExercise) && (
               <div>
-                {/* Effort selector */}
                 <div style={{fontSize:11,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:10}}>EFFORT LEVEL</div>
                 <div style={{display:"flex",gap:8,marginBottom:20}}>
                   {[{id:"easy",l:"EASY 😤",c:"#00d4ff"},{id:"medium",l:"MODERATE 🔥",c:"#ff8c00"},{id:"hard",l:"HARD 💀",c:"#ff4500"}].map(e=>(
@@ -855,8 +797,6 @@ useEffect(() => {
                     </button>
                   ))}
                 </div>
-
-                {/* Timer display */}
                 <div style={{textAlign:"center",marginBottom:20}}>
                   {cardioRunning ? (
                     <>
@@ -883,8 +823,6 @@ useEffect(() => {
                     </>
                   )}
                 </div>
-
-                {/* Controls */}
                 {!cardioRunning ? (
                   <div style={{display:"flex",gap:8,marginBottom:8}}>
                     <button onClick={()=>{setCardioElapsed(0);setCardioRunning(true);}} className="pr" style={{...C.btn("ghost"),flex:1,border:"1px solid #ff8c00",color:"#ff8c00",fontSize:14}}>⏱ START TIMER</button>
@@ -902,10 +840,8 @@ useEffect(() => {
               </div>
             )}
 
-            {/* ── PLANK MODE ── */}
             {isPlank(activeExercise) && !isCardio(activeExercise) && (
               <div>
-                {/* Config (only show before starting) */}
                 {!plankRunning && plankCurrentSet === 1 && !plankDone && !plankResting && (
                   <>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
@@ -931,8 +867,6 @@ useEffect(() => {
                     </div>
                   </>
                 )}
-
-                {/* Set progress dots */}
                 <div style={{display:"flex",gap:6,marginBottom:20}}>
                   {Array.from({length:plankSets}).map((_,i)=>{
                     const done = i+1 < plankCurrentSet || (i+1 === plankCurrentSet && plankDone);
@@ -940,8 +874,6 @@ useEffect(() => {
                     return <div key={i} style={{flex:1,height:6,borderRadius:3,background:done?"#ff4500":active?"#ff8c00":"#222",transition:"background 0.3s"}}/>;
                   })}
                 </div>
-
-                {/* Plank timer circle */}
                 <div style={{textAlign:"center",marginBottom:20}}>
                   <div style={{fontSize:10,color:"#888",letterSpacing:3,fontFamily:"Barlow,sans-serif",marginBottom:8}}>
                     {plankResting ? "REST" : `SET ${plankCurrentSet} OF ${plankSets}`}
@@ -957,26 +889,15 @@ useEffect(() => {
                     </svg>
                     <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                       {plankResting ? (
-                        <>
-                          <div style={{fontSize:36,color:"#00d4ff"}}>{plankRestCountdown}s</div>
-                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>rest</div>
-                        </>
+                        <><div style={{fontSize:36,color:"#00d4ff"}}>{plankRestCountdown}s</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>rest</div></>
                       ) : plankDone ? (
-                        <>
-                          <div style={{fontSize:36,color:"#00d4ff"}}>✓</div>
-                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#00d4ff"}}>DONE!</div>
-                        </>
+                        <><div style={{fontSize:36,color:"#00d4ff"}}>✓</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#00d4ff"}}>DONE!</div></>
                       ) : (
-                        <>
-                          <div style={{fontSize:42,color:"#ff4500"}}>{plankCountdown}s</div>
-                          <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>hold</div>
-                        </>
+                        <><div style={{fontSize:42,color:"#ff4500"}}>{plankCountdown}s</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#555"}}>hold</div></>
                       )}
                     </div>
                   </div>
                 </div>
-
-                {/* Plank controls */}
                 {plankResting ? (
                   <button onClick={()=>{setPlankResting(false);startPlankSet();}} className="pr" style={{...C.btn("ghost"),border:"1px solid #ff8c00",color:"#ff8c00",marginBottom:8,fontSize:14}}>SKIP REST → START SET {plankCurrentSet}</button>
                 ) : plankDone ? (
@@ -993,14 +914,12 @@ useEffect(() => {
                     {plankCurrentSet === 1 && plankCountdown === plankSetDuration ? "▶ START SET 1" : "▶ RESUME"}
                   </button>
                 )}
-
                 <button onClick={savePlank} style={{...C.btn("ghost"),fontSize:13,color:"#444",marginBottom:8}}>
                   SAVE & EXIT ({plankCurrentSet - 1 + (plankDone ? 1 : 0)}/{plankSets} SETS)
                 </button>
               </div>
             )}
 
-            {/* ── REGULAR STRENGTH MODE ── */}
             {!isCardio(activeExercise) && !isPlank(activeExercise) && (
               <>
                 <div style={{display:"flex",gap:6,marginBottom:20}}>
@@ -1038,7 +957,6 @@ useEffect(() => {
             )}
           </div>
 
-          {/* Only show finish early for strength exercises */}
           {!isCardio(activeExercise) && !isPlank(activeExercise) && (
             <button onClick={finishEarly} className="pr" style={{...C.btn("ghost"),color:"#ff8c00",border:"1px solid #ff8c00",marginBottom:8}}>
               ✓ FINISH & SAVE ({Object.keys(completedSets).length} SET{Object.keys(completedSets).length!==1?"S":""} COMPLETED)
@@ -1052,7 +970,6 @@ useEffect(() => {
             setTab("exercises");
           }} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
 
-          {/* Rest timer only for strength */}
           {!isCardio(activeExercise) && !isPlank(activeExercise) && (
             <div style={{...C.card,marginTop:12}}>
               <div style={C.lbl}>REST BETWEEN SETS</div>
@@ -1145,13 +1062,9 @@ useEffect(() => {
                       <div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>✎ EDIT</div>
                     </div>
                     {ex.isCardio ? (
-                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
-                        {ex.duration} min · {ex.effort} · ~{ex.caloriesBurned} cal burned
-                      </div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.duration} min · {ex.effort} · ~{ex.caloriesBurned} cal burned</div>
                     ) : ex.isPlank ? (
-                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>
-                        {ex.sets} sets × {ex.holdSeconds}s hold
-                      </div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.holdSeconds}s hold</div>
                     ) : (
                       <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{ex.sets} sets × {ex.reps} reps</div>
                     )}
@@ -1191,7 +1104,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ─── FOOD MODALS ─── */}
       {showFoodModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:200,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexShrink:0}}>
@@ -1237,7 +1149,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* SERVING SIZE MODAL */}
       {servingFood&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
@@ -1291,7 +1202,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* MANUAL MACRO ENTRY */}
       {showManualEntry&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1314,7 +1224,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* EDIT MACRO GOALS MODAL */}
       {showGoalsModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1557,7 +1466,7 @@ useEffect(() => {
           })()}
         </div>
       )}
-      {/* ─── EDIT FOOD MODAL ─── */}
+
       {editFood&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:400,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1573,7 +1482,6 @@ useEffect(() => {
             <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={editFoodForm.carbs} onChange={e=>setEditFoodForm(p=>({...p,carbs:e.target.value}))}/></div>
             <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={editFoodForm.fat} onChange={e=>setEditFoodForm(p=>({...p,fat:e.target.value}))}/></div>
           </div>
-          {/* Live macro preview */}
           <div style={{...C.acard,display:"grid",gridTemplateColumns:"repeat(4,1fr)",textAlign:"center",gap:8,marginTop:4,marginBottom:20}}>
             {[{l:"CALS",v:parseInt(editFoodForm.calories)||0,c:"#ff4500"},{l:"PROTEIN",v:`${parseInt(editFoodForm.protein)||0}g`,c:"#00d4ff"},{l:"CARBS",v:`${parseInt(editFoodForm.carbs)||0}g`,c:"#ffcc00"},{l:"FAT",v:`${parseInt(editFoodForm.fat)||0}g`,c:"#ff69b4"}].map((m,i)=>(
               <div key={i}><div style={{fontSize:18,color:m.c}}>{m.v}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555",letterSpacing:1}}>{m.l}</div></div>
@@ -1584,7 +1492,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ─── EDIT WORKOUT MODAL ─── */}
       {editWorkout&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:400,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1595,7 +1502,6 @@ useEffect(() => {
             <div style={{fontSize:18,letterSpacing:1}}>{editWorkout.item.name}</div>
             <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>{editWorkout.item.time}</div>
           </div>
-
           {editWorkout.item.isCardio && (
             <>
               <div style={C.lbl}>DURATION (minutes)</div>
@@ -1616,7 +1522,6 @@ useEffect(() => {
               </div>
             </>
           )}
-
           {editWorkout.item.isPlank && (
             <>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
@@ -1642,7 +1547,6 @@ useEffect(() => {
               </div>
             </>
           )}
-
           {!editWorkout.item.isCardio && !editWorkout.item.isPlank && (
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
               <div>
@@ -1663,60 +1567,61 @@ useEffect(() => {
               </div>
             </div>
           )}
-
           <button onClick={saveEditWorkout} className="pr" style={C.btn()}>✓ SAVE CHANGES</button>
           <button onClick={()=>setEditWorkout(null)} className="pr" style={{...C.btn("ghost"),marginTop:8,fontSize:14}}>CANCEL</button>
-{/* ── FUSE SPLASH ── */}
-{showSplash && (
-  <div style={{
-    position:"fixed", inset:0, background:"#0C0B0A", zIndex:9999,
-    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-    gap:12, transition:"opacity 0.6s ease",
-  }}>
-    <div style={{
-      width:64, height:64, background:"#E8503C", borderRadius:18,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      animation:"iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both",
-    }}>
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <line x1="5" y1="16" x2="22" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-        <circle cx="22" cy="16" r="6" stroke="white" strokeWidth="2"/>
-        <circle cx="22" cy="16" r="2.4" fill="white"/>
-      </svg>
-    </div>
-    <div style={{
-      fontFamily:"Bebas Neue,sans-serif", fontSize:38, letterSpacing:8,
-      color:"#fff", lineHeight:1,
-      animation:"fadeUp 0.4s ease 0.7s both",
-    }}>LIV</div>
-    <div style={{
-      fontFamily:"Barlow,sans-serif", fontSize:10, color:"rgba(255,255,255,0.3)",
-      letterSpacing:"0.14em", textTransform:"uppercase",
-      animation:"fadeUp 0.4s ease 0.9s both",
-    }}>a fuse app · by TNT Labs</div>
-  </div>
-)}
-
-{/* ── FUSE FOOTER ── */}
-<div style={{
-  borderTop:"1px solid #1a1a1a", padding:"10px 16px",
-  display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-}}>
-  <div style={{
-    width:15, height:15, background:"#0C0B0A", border:"1px solid #333",
-    borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
-  }}>
-    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-      <line x1="1.5" y1="4.5" x2="6.5" y2="4.5" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
-      <circle cx="6.5" cy="4.5" r="1.8" stroke="white" strokeWidth="0.9"/>
-    </svg>
-  </div>
-  <span style={{fontFamily:"Bebas Neue,sans-serif", fontSize:10, color:"#555", letterSpacing:"0.08em"}}>fuse</span>
-  <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#333"}}>·</span>
-  <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#555"}}>by TNT Labs</span>
-</div>
         </div>
       )}
+
+      {/* ── FUSE SPLASH ── */}
+      {showSplash && (
+        <div style={{
+          position:"fixed", inset:0, background:"#0C0B0A", zIndex:9999,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          gap:12,
+        }}>
+          <div style={{
+            width:64, height:64, background:"#E8503C", borderRadius:18,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            animation:"iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both",
+          }}>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <line x1="5" y1="16" x2="22" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="22" cy="16" r="6" stroke="white" strokeWidth="2"/>
+              <circle cx="22" cy="16" r="2.4" fill="white"/>
+            </svg>
+          </div>
+          <div style={{
+            fontFamily:"Bebas Neue,sans-serif", fontSize:38, letterSpacing:8,
+            color:"#fff", lineHeight:1,
+            animation:"fadeUp 0.4s ease 0.7s both",
+          }}>LIV</div>
+          <div style={{
+            fontFamily:"Barlow,sans-serif", fontSize:10, color:"rgba(255,255,255,0.3)",
+            letterSpacing:"0.14em", textTransform:"uppercase",
+            animation:"fadeUp 0.4s ease 0.9s both",
+          }}>a fuse app · by TNT Labs</div>
+        </div>
+      )}
+
+      {/* ── FUSE FOOTER ── */}
+      <div style={{
+        borderTop:"1px solid #1a1a1a", padding:"10px 16px",
+        display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+      }}>
+        <div style={{
+          width:15, height:15, background:"#0C0B0A", border:"1px solid #333",
+          borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+        }}>
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+            <line x1="1.5" y1="4.5" x2="6.5" y2="4.5" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
+            <circle cx="6.5" cy="4.5" r="1.8" stroke="white" strokeWidth="0.9"/>
+          </svg>
+        </div>
+        <span style={{fontFamily:"Bebas Neue,sans-serif", fontSize:10, color:"#555", letterSpacing:"0.08em"}}>fuse</span>
+        <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#333"}}>·</span>
+        <span style={{fontFamily:"Barlow,sans-serif", fontSize:10, color:"#555"}}>by TNT Labs</span>
+      </div>
+
     </div>
   );
 }
