@@ -212,6 +212,7 @@ export default function LIV() {
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
   const [weightGoalForm, setWeightGoalForm] = useState({ current:0, goal:0, unit:"lbs", bmr:0, activityLevel:"moderate" });
   const [backfillDay, setBackfillDay] = useState(null);
+  const [backfillWorkoutDay, setBackfillWorkoutDay] = useState(null);
   const [customFoods, setCustomFoods] = useState(() => loadLS("liv_customFoods", []));
   const [selectedDay, setSelectedDay] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
@@ -449,25 +450,25 @@ export default function LIV() {
     const newDone={...completedSets,[currentSet]:true}; setCompletedSets(newDone);
     if (currentSet < activeExercise.defaultSets) { setIsResting(true); setRestCountdown(restTime); setCurrentSet(s=>s+1); setRepsLeft(activeExercise.defaultReps); }
     else {
-      const key=todayKey();
+      const key=backfillWorkoutDay||todayKey();
       setWorkoutLog(prev=>({...prev,[key]:[...(prev[key]||[]),{name:activeExercise.name,sets:activeExercise.defaultSets,reps:activeExercise.defaultReps,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}]}));
-      setActiveExercise(null); setIsResting(false); setTab("exercises");
+      setActiveExercise(null); setIsResting(false); setBackfillWorkoutDay(null); setTab("exercises");
     }
   };
 
   const saveCardio = () => {
     const mins=cardioRunning?Math.round(cardioElapsed/60):parseInt(cardioMinutes)||0; if(mins===0) return;
     const cals=estimateCardioCalories(mins,cardioEffort); const effortLabel={easy:"Easy",medium:"Moderate",hard:"Hard"}[cardioEffort]||"Moderate";
-    const key=todayKey();
+    const key=backfillWorkoutDay||todayKey();
     setWorkoutLog(prev=>({...prev,[key]:[...(prev[key]||[]),{name:activeExercise.name,sets:1,reps:mins,isCardio:true,duration:mins,effort:effortLabel,caloriesBurned:cals,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}]}));
-    setCardioRunning(false); clearInterval(cardioTimerRef.current); setActiveExercise(null); setTab("exercises");
+    setCardioRunning(false); clearInterval(cardioTimerRef.current); setActiveExercise(null); setBackfillWorkoutDay(null); setTab("exercises");
   };
 
   const savePlank = () => {
     const completedPlankSets=plankCurrentSet-1+(plankDone?1:0); if(completedPlankSets===0){setActiveExercise(null);setTab("exercises");return;}
-    const key=todayKey();
+    const key=backfillWorkoutDay||todayKey();
     setWorkoutLog(prev=>({...prev,[key]:[...(prev[key]||[]),{name:"Plank",sets:completedPlankSets,reps:plankSetDuration,isPlank:true,holdSeconds:plankSetDuration,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}]}));
-    setPlankRunning(false); setPlankResting(false); clearTimeout(plankTimerRef.current); setActiveExercise(null); setTab("exercises");
+    setPlankRunning(false); setPlankResting(false); clearTimeout(plankTimerRef.current); setActiveExercise(null); setBackfillWorkoutDay(null); setTab("exercises");
   };
 
   const startPlankSet = () => { setPlankCountdown(plankSetDuration); setPlankDone(false); setPlankRunning(true); setPlankResting(false); };
@@ -476,9 +477,9 @@ export default function LIV() {
   const finishEarly = () => {
     const setsCompleted=Object.keys(completedSets).length;
     if(setsCompleted===0){setActiveExercise(null);setIsResting(false);setCompletedSets({});setTab("exercises");return;}
-    const key=todayKey();
+    const key=backfillWorkoutDay||todayKey();
     setWorkoutLog(prev=>({...prev,[key]:[...(prev[key]||[]),{name:activeExercise.name,sets:setsCompleted,reps:activeExercise.defaultReps,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}]}));
-    setActiveExercise(null); setIsResting(false); setCompletedSets({}); setCurrentSet(1); setTab("exercises");
+    setActiveExercise(null); setIsResting(false); setCompletedSets({}); setCurrentSet(1); setBackfillWorkoutDay(null); setTab("exercises");
   };
 
   const saveCustom = () => {
@@ -570,6 +571,11 @@ export default function LIV() {
 
       {tab==="active"&&activeExercise&&(
         <div style={C.sec} className="sl">
+          {backfillWorkoutDay&&(
+            <div style={{background:"#1a0800",border:"1px solid #ff8c00",borderRadius:10,padding:"8px 14px",marginBottom:12,fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00"}}>
+              📅 Saving to: {new Date(backfillWorkoutDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}
+            </div>
+          )}
           <div style={C.acard}>
             <div style={{fontSize:10,letterSpacing:3,color:"#ff4500",fontFamily:"Barlow,sans-serif",marginBottom:8}}>NOW PERFORMING</div>
             <div style={{fontSize:28,letterSpacing:2,lineHeight:1.1,marginBottom:4}}>{activeExercise.name}</div>
@@ -606,13 +612,19 @@ export default function LIV() {
             </>)}
           </div>
           {!isCardio(activeExercise)&&!isPlank(activeExercise)&&(<button onClick={finishEarly} className="pr" style={{...C.btn("ghost"),color:"#ff8c00",border:"1px solid #ff8c00",marginBottom:8}}>✓ FINISH & SAVE ({Object.keys(completedSets).length} SET{Object.keys(completedSets).length!==1?"S":""} COMPLETED)</button>)}
-          <button onClick={()=>{setActiveExercise(null);setIsResting(false);setCompletedSets({});setCurrentSet(1);setCardioRunning(false);clearInterval(cardioTimerRef.current);setPlankRunning(false);clearTimeout(plankTimerRef.current);setTab("exercises");}} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
+          <button onClick={()=>{setActiveExercise(null);setIsResting(false);setCompletedSets({});setCurrentSet(1);setCardioRunning(false);clearInterval(cardioTimerRef.current);setPlankRunning(false);clearTimeout(plankTimerRef.current);setBackfillWorkoutDay(null);setTab("exercises");}} style={C.btn("ghost")}>← BACK WITHOUT SAVING</button>
           {!isCardio(activeExercise)&&!isPlank(activeExercise)&&(<div style={{...C.card,marginTop:12}}><div style={C.lbl}>REST BETWEEN SETS</div><div style={{display:"flex",gap:8}}>{[30,60,90,120].map(s=>(<button key={s} onClick={()=>setRestTime(s)} className="pr" style={{...C.sBtn,flex:1,background:restTime===s?"#ff4500":"#1a1a1a",color:restTime===s?"#fff":"#666"}}>{s}s</button>))}</div></div>)}
         </div>
       )}
 
       {tab==="exercises"&&(
         <div style={C.sec} className="sl">
+          {backfillWorkoutDay&&(
+            <div style={{background:"#1a0800",border:"1px solid #ff8c00",borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:13,letterSpacing:2,color:"#ff8c00"}}>BACKFILLING WORKOUT</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",opacity:0.8}}>{new Date(backfillWorkoutDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div></div>
+              <button onClick={()=>setBackfillWorkoutDay(null)} style={{background:"transparent",border:"1px solid #ff8c00",color:"#ff8c00",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:11,letterSpacing:1}}>CANCEL</button>
+            </div>
+          )}
           <input style={C.inp} placeholder="🔍  Search exercises..." value={exSearch} onChange={e=>setExSearch(e.target.value)}/>
           <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:10,marginBottom:14}}>
             {["All",...Object.keys(EXERCISE_LIBRARY)].map(g=>(<button key={g} onClick={()=>setExGroup(g)} className="pr" style={{...C.sBtn,flex:"0 0 auto",background:exGroup===g?"#ff4500":"#1a1a1a",color:exGroup===g?"#fff":"#666"}}>{EXERCISE_LIBRARY[g]?.icon||"🔍"} {g}</button>))}
@@ -833,7 +845,7 @@ export default function LIV() {
                 {/* ── WORKOUT SECTION with + ADD WORKOUT button always visible ── */}
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <div style={{fontSize:13,letterSpacing:3,color:"#ff4500"}}>💪 WORKOUT{dayWorkout.length>0?` — ${dayWorkout.length} EXERCISES`:""}</div>
-                  <button onClick={()=>{setTab("exercises");setSelectedDay(null);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD WORKOUT</button>
+                  <button onClick={()=>{setBackfillWorkoutDay(selectedDay);setTab("exercises");setSelectedDay(null);}} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontFamily:"Bebas Neue,sans-serif",fontSize:12,letterSpacing:1}}>+ ADD WORKOUT</button>
                 </div>
                 {dayWorkout.length>0&&dayWorkout.map((ex,i)=>(
                   <div key={i} onClick={()=>openEditWorkout(ex,i,selectedDay)} className="fr" style={{...C.card,display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${ex.isCardio?"#00d4ff":ex.isPlank?"#ff8c00":"#ff4500"}`,marginBottom:8,cursor:"pointer"}}>
