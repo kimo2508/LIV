@@ -22,29 +22,42 @@ export default async function handler(req, res) {
 
     // Step 2: Search for foods by name
     const searchRes = await fetch(
-      `https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=${encodeURIComponent(query)}&format=json&max_results=8&page_number=0`,
+      `https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=${encodeURIComponent(query)}&format=json&max_results=10&page_number=0`,
       { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
     );
 
     const searchData = await searchRes.json();
     const foods = searchData?.foods?.food;
 
-    if (!foods) return res.status(200).json({ results: [] });
+    if (!foods) return res.status(200).json({ results: [], raw: searchData });
 
     const foodArray = Array.isArray(foods) ? foods : [foods];
 
     const results = foodArray.map((food) => {
-      // FatSecret returns nutrition in the food_description field
-      // e.g. "Per 100g - Calories: 165kcal | Fat: 3.57g | Carbs: 0g | Protein: 31.02g"
+      // FatSecret food_description examples:
+      // "Per 100g - Calories: 165kcal | Fat: 3.57g | Carbs: 0.00g | Protein: 31.02g"
+      // "Per 1 burger - Calories: 550 kcal | Fat: 30g | Carbs: 45g | Protein: 25g"
       const desc = food.food_description || "";
-      const cal = parseFloat(desc.match(/Calories:\s*([\d.]+)/)?.[1] || 0);
-      const fat = parseFloat(desc.match(/Fat:\s*([\d.]+)/)?.[1] || 0);
-      const carbs = parseFloat(desc.match(/Carbs:\s*([\d.]+)/)?.[1] || 0);
-      const protein = parseFloat(desc.match(/Protein:\s*([\d.]+)/)?.[1] || 0);
+
+      // Case-insensitive, handles space before kcal/g
+      const calMatch = desc.match(/Calories:\s*([\d.]+)/i);
+      const fatMatch = desc.match(/Fat:\s*([\d.]+)/i);
+      const carbMatch = desc.match(/Carbs:\s*([\d.]+)/i);
+      const protMatch = desc.match(/Protein:\s*([\d.]+)/i);
+
+      const cal = parseFloat(calMatch?.[1] || 0);
+      const fat = parseFloat(fatMatch?.[1] || 0);
+      const carbs = parseFloat(carbMatch?.[1] || 0);
+      const protein = parseFloat(protMatch?.[1] || 0);
+
+      // Extract the serving info from "Per X serving" part
+      const servingMatch = desc.match(/^Per\s+(.+?)\s+-/i);
+      const serving = servingMatch?.[1] || "serving";
 
       return {
         name: food.food_name,
         brand: food.brand_name || null,
+        serving,
         calories: Math.round(cal),
         protein: parseFloat(protein.toFixed(1)),
         carbs: parseFloat(carbs.toFixed(1)),
@@ -53,12 +66,15 @@ export default async function handler(req, res) {
         servingUnit: "g",
         _fromSearch: true,
       };
-    }).filter(f => f.calories > 0 || f.protein > 0);
+    });
 
-    return res.status(200).json({ results });
+    // Only remove items with no nutritional data at all AND no name
+    const filtered = results.filter(f => f.name);
+
+    return res.status(200).json({ results: filtered });
 
   } catch (err) {
     console.error("FatSecret search error:", err);
-    return res.status(500).json({ error: "server_error" });
+    return res.status(500).json({ error: "server_error", message: err.message });
   }
 }
