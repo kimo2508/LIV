@@ -253,10 +253,10 @@ export default function LIV() {
   const restRef = useRef(null);
   const readerRef = useRef(null);
 
-  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem("fuse_liv_launched_v3"));
+  const [showSplash, setShowSplash] = useState(() => ! sessionStorage.getItem("fuse_liv_launched_v3"));
   useEffect(() => {
     if (showSplash) {
-      const t = setTimeout(() => { setShowSplash(false); localStorage.setItem("fuse_liv_launched_v3", "1"); }, 2400);
+      const t = setTimeout(() => { setShowSplash(false); sessionStorage.setItem("fuse_liv_launched_v3", "1"); }, 2400);
       return () => clearTimeout(t);
     }
   }, [showSplash]);
