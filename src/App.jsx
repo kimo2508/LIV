@@ -90,11 +90,7 @@ const ALL_LIBRARY = Object.entries(EXERCISE_LIBRARY).flatMap(([group, data]) =>
   data.exercises.map(ex => ({ ...ex, muscleGroup: group }))
 );
 
-const CARDIO_MET = {
-  easy: 5,
-  medium: 8,
-  hard: 11,
-};
+const CARDIO_MET = { easy: 5, medium: 8, hard: 11 };
 
 function estimateCardioCalories(minutes, effort) {
   const weightKg = 115;
@@ -231,6 +227,9 @@ export default function LIV() {
   const [manualMacros, setManualMacros] = useState({ name:"", calories:"", protein:"", carbs:"", fat:"" });
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [foodSearch, setFoodSearch] = useState("");
+  // ── NEW: FatSecret live search state ──
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [scanState, setScanState] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
   const [manualBarcode, setManualBarcode] = useState("");
@@ -453,6 +452,20 @@ export default function LIV() {
     } catch { setScanState("error"); }
   };
 
+  // ── NEW: FatSecret food name search ──
+  const searchFoods = async (query) => {
+    if (!query || query.length < 2) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/foodsearch?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setSearchResults(data.results || []);
+    } catch {
+      setSearchResults([]);
+    }
+    setSearchLoading(false);
+  };
+
   const addFood = (food, targetDate=null) => {
     if ((food.calories===0||food.calories==="0") && (food.protein===0||food.protein==="0")) {
       setManualMacros({ name:food.name, calories:"", protein:"", carbs:"", fat:"" });
@@ -494,6 +507,7 @@ export default function LIV() {
     setFoodLog(prev => ({ ...prev, [key]: [...(prev[key]||[]), scaled] }));
     setServingFood(null); setShowFoodModal(false); setScanState("idle"); setScanResult(null);
     setFoodSearch(""); setManualBarcode(""); stopScanner(); setBackfillDay(null);
+    setSearchResults([]);
   };
 
   const addManualFood = (saveToMyFoods=false) => {
@@ -516,6 +530,7 @@ export default function LIV() {
     setShowManualEntry(false); setManualMacros({ name:"", calories:"", protein:"", carbs:"", fat:"" });
     setShowFoodModal(false); setScanState("idle"); setScanResult(null);
     setFoodSearch(""); setManualBarcode(""); stopScanner(); setBackfillDay(null);
+    setSearchResults([]);
   };
 
   const removeFood = (id, date=null) => {
@@ -1111,7 +1126,7 @@ export default function LIV() {
               <div style={{fontSize:22,letterSpacing:3}}>LOG FOOD</div>
               {backfillDay&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#ff8c00",marginTop:2}}>Adding to: {new Date(backfillDay+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>}
             </div>
-            <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
+            <button onClick={()=>{setShowFoodModal(false);setScanState("idle");setScanResult(null);stopScanner();setBackfillDay(null);setSearchResults([]);setFoodSearch("");}} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
           </div>
           <div style={{marginBottom:12}}/>
           <div style={{...C.card,marginBottom:12,flexShrink:0}}>
@@ -1141,10 +1156,65 @@ export default function LIV() {
             )}
             {(scanState==="error"||scanState==="notfound")&&(<div style={{textAlign:"center",padding:16}}><div style={{fontSize:30,marginBottom:8}}>{scanState==="notfound"?"🔍":"❌"}</div><div style={{fontFamily:"Barlow,sans-serif",color:"#666",marginBottom:12}}>{scanState==="notfound"?"Product not found. Try searching below.":"Something went wrong. Try again."}</div><button onClick={()=>{setScanState("idle");setManualBarcode("");}} style={{...C.btn("ghost"),fontSize:13}}>TRY AGAIN</button></div>)}
           </div>
+
+          {/* ── SEARCH + MANUAL ENTRY BUTTON ── */}
           <div style={{...C.lbl,flexShrink:0}}>SEARCH FOOD DATABASE</div>
-          <input style={{...C.inp,flexShrink:0}} placeholder="Search foods..." value={foodSearch} onChange={e=>setFoodSearch(e.target.value)}/>
+          <input
+            style={{...C.inp,flexShrink:0}}
+            placeholder="Search foods..."
+            value={foodSearch}
+            onChange={e=>{setFoodSearch(e.target.value);searchFoods(e.target.value);}}
+          />
+          <button
+            onClick={()=>{
+              setManualMacros({name:"",calories:"",protein:"",carbs:"",fat:""});
+              setShowManualEntry(true);
+              setShowFoodModal(false);
+            }}
+            className="pr"
+            style={{...C.btn("ghost"),border:"1px solid #ff8c00",color:"#ff8c00",fontSize:13,marginBottom:12,flexShrink:0}}
+          >
+            ✏️ ENTER FOOD MANUALLY
+          </button>
+
           <div style={{paddingBottom:40}}>
-            {[...customFoods.map(f=>({...f,_custom:true})), ...PRESET_FOODS].filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase())).map((food,i)=>(<div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>{food._custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1}}>MY FOOD</span>}</div><div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div></div><div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div></div>))}
+            {/* Live FatSecret results */}
+            {searchLoading&&<div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",textAlign:"center",padding:"12px 0"}}>Searching FatSecret database...</div>}
+            {searchResults.length>0&&(
+              <>
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#ff8c00",letterSpacing:2,marginBottom:8,marginTop:4}}>FROM FATSECRET DATABASE</div>
+                {searchResults.map((food,i)=>(
+                  <div key={"fs"+i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:"2px solid #ff8c00"}}>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                        {food.brand&&<span style={{fontFamily:"Barlow,sans-serif",fontSize:9,color:"#555"}}>{food.brand}</span>}
+                        <span style={{background:"#1a0e00",color:"#ff8c00",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1,border:"1px solid rgba(255,140,0,0.3)"}}>LIVE</span>
+                      </div>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
+                    </div>
+                    <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
+                  </div>
+                ))}
+                <div style={{fontFamily:"Barlow,sans-serif",fontSize:10,color:"#333",letterSpacing:2,margin:"12px 0 8px"}}>YOUR DATABASE</div>
+              </>
+            )}
+            {/* Local preset + custom foods */}
+            {[...customFoods.map(f=>({...f,_custom:true})), ...PRESET_FOODS]
+              .filter(f=>f.name.toLowerCase().includes(foodSearch.toLowerCase()))
+              .map((food,i)=>(
+                <div key={i} className="fr" onClick={()=>addFood(food)} style={{...C.card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:600}}>{food.name}</div>
+                      {food._custom&&<span style={{background:"#ff4500",color:"#fff",fontSize:8,padding:"2px 5px",borderRadius:4,fontFamily:"Barlow,sans-serif",letterSpacing:1}}>MY FOOD</span>}
+                    </div>
+                    <div style={{fontFamily:"Barlow,sans-serif",fontSize:11,color:"#555",marginTop:2}}>P:{food.protein}g · C:{food.carbs}g · F:{food.fat}g</div>
+                  </div>
+                  <div style={{color:"#ff4500",fontFamily:"Barlow,sans-serif",fontSize:14,fontWeight:700}}>{food.calories}cal</div>
+                </div>
+              ))
+            }
           </div>
         </div>
       )}
@@ -1202,15 +1272,16 @@ export default function LIV() {
         </div>
       )}
 
+      {/* ── MANUAL FOOD ENTRY MODAL (updated title + description) ── */}
       {showManualEntry&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <div style={{fontSize:20,letterSpacing:2}}>ENTER MACROS</div>
+            <div style={{fontSize:20,letterSpacing:2}}>ENTER FOOD MANUALLY</div>
             <button onClick={()=>setShowManualEntry(false)} style={{background:"#222",border:"none",color:"#fff",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:18}}>×</button>
           </div>
-          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Product found but macros were missing. Enter them manually.</div>
-          <div style={C.lbl}>PRODUCT NAME</div>
-          <input style={C.inp} value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
+          <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Type in a food name and its nutrition info.</div>
+          <div style={C.lbl}>FOOD NAME</div>
+          <input style={C.inp} placeholder="e.g. Mom's Chili" value={manualMacros.name} onChange={e=>setManualMacros(p=>({...p,name:e.target.value}))}/>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.calories} onChange={e=>setManualMacros(p=>({...p,calories:e.target.value}))}/></div>
             <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" placeholder="0" value={manualMacros.protein} onChange={e=>setManualMacros(p=>({...p,protein:e.target.value}))}/></div>
@@ -1224,6 +1295,7 @@ export default function LIV() {
         </div>
       )}
 
+      {/* ── GOALS MODAL (fixed leading zero bug) ── */}
       {showGoalsModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:300,display:"flex",flexDirection:"column",padding:20,overflowY:"auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1232,12 +1304,24 @@ export default function LIV() {
           </div>
           <div style={{fontFamily:"Barlow,sans-serif",fontSize:12,color:"#555",marginBottom:20}}>Set your daily macro targets.</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:parseInt(e.target.value)||0}))}/></div>
-            <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:parseInt(e.target.value)||0}))}/></div>
-            <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:parseInt(e.target.value)||0}))}/></div>
-            <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:parseInt(e.target.value)||0}))}/></div>
+            <div><div style={C.lbl}>CALORIES</div><input style={C.inp} type="number" value={goalsForm.calories} onChange={e=>setGoalsForm(p=>({...p,calories:e.target.value}))}/></div>
+            <div><div style={C.lbl}>PROTEIN (g)</div><input style={C.inp} type="number" value={goalsForm.protein} onChange={e=>setGoalsForm(p=>({...p,protein:e.target.value}))}/></div>
+            <div><div style={C.lbl}>CARBS (g)</div><input style={C.inp} type="number" value={goalsForm.carbs} onChange={e=>setGoalsForm(p=>({...p,carbs:e.target.value}))}/></div>
+            <div><div style={C.lbl}>FAT (g)</div><input style={C.inp} type="number" value={goalsForm.fat} onChange={e=>setGoalsForm(p=>({...p,fat:e.target.value}))}/></div>
           </div>
-          <button onClick={()=>{setMacroGoals({...goalsForm});setShowGoalsModal(false);}} className="pr" style={{...C.btn(),marginTop:12}}>✓ SAVE GOALS</button>
+          <button
+            onClick={()=>{
+              setMacroGoals({
+                calories:parseInt(goalsForm.calories)||0,
+                protein:parseInt(goalsForm.protein)||0,
+                carbs:parseInt(goalsForm.carbs)||0,
+                fat:parseInt(goalsForm.fat)||0,
+              });
+              setShowGoalsModal(false);
+            }}
+            className="pr"
+            style={{...C.btn(),marginTop:12}}
+          >✓ SAVE GOALS</button>
         </div>
       )}
 
@@ -1560,7 +1644,7 @@ export default function LIV() {
               <div>
                 <div style={C.lbl}>REPS</div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <button onClick={()=>setEditWorkoutForm(p=>({...p,reps:String(Math.max(1,parseInt(p.reps||1)-1))})) } className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+                  <button onClick={()=>setEditWorkoutForm(p=>({...p,reps:String(Math.max(1,parseInt(p.reps||1)-1))}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
                   <input style={{...C.inp,margin:0,flex:1,textAlign:"center",fontSize:28}} type="number" value={editWorkoutForm.reps} onChange={e=>setEditWorkoutForm(p=>({...p,reps:e.target.value}))}/>
                   <button onClick={()=>setEditWorkoutForm(p=>({...p,reps:String(parseInt(p.reps||0)+1)}))} className="pr" style={{width:36,height:36,borderRadius:"50%",background:"#1a1a1a",border:"2px solid #2a2a2a",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
                 </div>
