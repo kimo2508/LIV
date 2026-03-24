@@ -264,7 +264,7 @@ export default function LIV() {
 
   // ── FUSE SPLASH ──
   const [showSplash, setShowSplash] = useState(() => {
-    return !sessioinStorage.getItem("fuse_liv_launched_v3");
+    return !sessionStorage.getItem("fuse_liv_launched_v3");
   });
   useEffect(() => {
     if (showSplash) {
