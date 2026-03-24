@@ -3,78 +3,53 @@ export default async function handler(req, res) {
   if (!query) return res.status(400).json({ error: "No query provided" });
 
   try {
-    // Step 1: Get OAuth token
-    const tokenRes = await fetch("https://oauth.fatsecret.com/connect/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: process.env.FATSECRET_CLIENT_ID,
-        client_secret: process.env.FATSECRET_CLIENT_SECRET,
-        scope: "basic",
-      }),
-    });
-
-    const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) {
-      return res.status(500).json({ error: "Auth failed" });
-    }
-
-    // Step 2: Search for foods by name
-    const searchRes = await fetch(
-      `https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=${encodeURIComponent(query)}&format=json&max_results=10&page_number=0`,
-      { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
+    const response = await fetch(
+      `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${process.env.USDA_API_KEY}&query=${encodeURIComponent(query)}&dataType=Branded,SR%20Legacy,Survey%20(FNDDS)&pageSize=10&sortBy=score&sortOrder=desc`,
+      { headers: { "Content-Type": "application/json" } }
     );
 
-    const searchData = await searchRes.json();
-    const foods = searchData?.foods?.food;
+    const data = await response.json();
+    const foods = data.foods || [];
 
-    if (!foods) return res.status(200).json({ results: [], raw: searchData });
+    const results = foods.map((food) => {
+      const nutrients = food.foodNutrients || [];
 
-    const foodArray = Array.isArray(foods) ? foods : [foods];
+      const get = (name) => {
+        const n = nutrients.find(n =>
+          n.nutrientName?.toLowerCase().includes(name.toLowerCase())
+        );
+        return parseFloat((n?.value || 0).toFixed(1));
+      };
 
-    const results = foodArray.map((food) => {
-      // FatSecret food_description examples:
-      // "Per 100g - Calories: 165kcal | Fat: 3.57g | Carbs: 0.00g | Protein: 31.02g"
-      // "Per 1 burger - Calories: 550 kcal | Fat: 30g | Carbs: 45g | Protein: 25g"
-      const desc = food.food_description || "";
+      const calories = Math.round(
+        nutrients.find(n =>
+          n.nutrientName === "Energy" && n.unitName === "KCAL"
+        )?.value ||
+        nutrients.find(n =>
+          n.nutrientName?.toLowerCase().includes("energy")
+        )?.value || 0
+      );
 
-      // Case-insensitive, handles space before kcal/g
-      const calMatch = desc.match(/Calories:\s*([\d.]+)/i);
-      const fatMatch = desc.match(/Fat:\s*([\d.]+)/i);
-      const carbMatch = desc.match(/Carbs:\s*([\d.]+)/i);
-      const protMatch = desc.match(/Protein:\s*([\d.]+)/i);
-
-      const cal = parseFloat(calMatch?.[1] || 0);
-      const fat = parseFloat(fatMatch?.[1] || 0);
-      const carbs = parseFloat(carbMatch?.[1] || 0);
-      const protein = parseFloat(protMatch?.[1] || 0);
-
-      // Extract the serving info from "Per X serving" part
-      const servingMatch = desc.match(/^Per\s+(.+?)\s+-/i);
-      const serving = servingMatch?.[1] || "serving";
+      const servingSize = food.servingSize || 100;
+      const servingUnit = (food.servingSizeUnit || "g").toLowerCase();
 
       return {
-        name: food.food_name,
-        brand: food.brand_name || null,
-        serving,
-        calories: Math.round(cal),
-        protein: parseFloat(protein.toFixed(1)),
-        carbs: parseFloat(carbs.toFixed(1)),
-        fat: parseFloat(fat.toFixed(1)),
-        servingSize: 100,
-        servingUnit: "g",
+        name: food.description,
+        brand: food.brandOwner || food.brandName || null,
+        calories,
+        protein: get("protein"),
+        carbs: get("carbohydrate"),
+        fat: get("total lipid"),
+        servingSize,
+        servingUnit,
         _fromSearch: true,
       };
-    });
+    }).filter(f => f.name && f.calories > 0);
 
-    // Only remove items with no nutritional data at all AND no name
-    const filtered = results.filter(f => f.name);
-
-    return res.status(200).json({ results: filtered });
+    return res.status(200).json({ results });
 
   } catch (err) {
-    console.error("FatSecret search error:", err);
+    console.error("USDA search error:", err);
     return res.status(500).json({ error: "server_error", message: err.message });
   }
 }
