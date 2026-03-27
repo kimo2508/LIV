@@ -1148,7 +1148,7 @@ export default function LIV() {
               {showAltFor===i&&ex.alternatives?.length>0&&(
                 <div style={{background: isDark ? "#0e0e0e" : "#f7f7f7",border: isDark ? "1px solid #1e1e1e" : "1px solid #e8e8e8",borderRadius:10,padding:"12px 14px",marginTop:-4,marginBottom:8}}>
                   <div style={{fontSize:10,letterSpacing:2,color:"#ff4500",fontFamily:"Barlow,sans-serif",marginBottom:8}}>🩹 INJURY ALTERNATIVES</div>
-                  {ex.alternatives.map((alt,j)=>(<div key={j} style={{fontFamily:"Barlow,sans-serif",fontSize:13,color: isDark ? "#aaa" : "#666",padding:"5px 0",borderBottom:j<ex.alternatives.length-1: isDark ? "1px solid #1a1a1a" : "1px solid #ebebeb","none"}}>→ {alt}</div>))}
+                  {ex.alternatives.map((alt,j)=>(<div key={j} style={{fontFamily:"Barlow,sans-serif",fontSize:13,color: isDark ? "#aaa" : "#666",padding:"5px 0",borderBottom:j<ex.alternatives.length-1 ? isDark ? "1px solid #1a1a1a" : "1px solid #ebebeb" : "none"}}>→ {alt}</div>))}
                 </div>
               )}
             </div>
