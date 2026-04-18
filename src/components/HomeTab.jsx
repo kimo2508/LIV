@@ -22,8 +22,9 @@ export default function HomeTab({ workoutLog, foodLog, macroGoals, theme: t, set
         <div style={{
           position: "absolute", top: -60, right: -40, width: 180, height: 180,
           background: `radial-gradient(circle, ${t.accent}1F 0%, transparent 70%)`, borderRadius: "50%",
+          pointerEvents: "none",
         }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1 }}>
           <div>
             <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 36, letterSpacing: 6, lineHeight: 1, color: t.text }}>LIV</div>
             <div style={{ fontSize: 11, color: t.sub, letterSpacing: "0.12em", marginTop: 2 }}>FORGE YOUR BEST SELF</div>
