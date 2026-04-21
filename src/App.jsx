@@ -115,7 +115,7 @@ export default function LIV() {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
         }}>
           <div style={{
-            width: 72, height: 72, background: t.accent, borderRadius: 20,
+            width: 72, height: 72, background: "linear-gradient(135deg, #1D9E75, #0F6E56)", borderRadius: 20,
             display: "flex", alignItems: "center", justifyContent: "center",
             animation: "iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both",
           }}>
