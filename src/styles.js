@@ -15,7 +15,7 @@ input::placeholder { color: rgba(255,255,255,0.2); }
 .hcard { transition: background 0.2s; }
 .hcard:active { background: rgba(255,255,255,0.04) !important; }
 .pulse { animation: pulse 1s ease-in-out infinite; }
-.scanline { position: absolute; left: 0; right: 0; height: 2px; background: #E8503C; animation: scanline 1.5s linear infinite; }
+.scanline { position: absolute; left: 0; right: 0; height: 2px; background: #1D9E75; animation: scanline 1.5s linear infinite; }
 video { object-fit: cover; width: 100%; display: block; }
 `;
 
@@ -27,8 +27,8 @@ input::placeholder { color: rgba(0,0,0,0.3) !important; }
 
 // ── THEME COLORS ─────────────────────────────────────────────────────────
 export function getTheme(isDark) {
-  const accent = "#E8503C";
-  const accentDark = "#C43A28";
+  const accent = "#1D9E75";
+  const accentDark = "#0F6E56";
   return {
     accent,
     accentDark,
